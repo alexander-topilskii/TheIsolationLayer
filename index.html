@@ -1,40 +1,44 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/webstorm-icon-logo.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WS playground</title>
-  <link rel="stylesheet" href="/style.css">
+  <title>The Isolation Layer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/crt.css" />
+  <link rel="stylesheet" href="/styles/terminal.css" />
+  <link rel="stylesheet" href="/styles/effects.css" />
 </head>
 <body>
-<header class="logo">
-  <a href="https://www.jetbrains.com/webstorm/">
-    <img src="/webstorm-logo.svg" alt="WebStorm logo" width="344"
-         height="90">
-  </a>
-</header>
-<main id="app">
-  <h1 class="title">
-    Thank you for trying it out. <br /> Your first project is up and running
-    now.
-  </h1>
-  <section class="counter">
-    <div class="counter-info">
-      <p class="counter-text">Counter is</p>
-      <p class="counter-value" id="counter-value"></p>
-    </div>
-    <div class="counter-interaction">
-      <button id="increaseByOne" type="button">+1</button>
-      <button id="increaseByTwo" type="button">+2</button>
-      <button id="decreaseByOne" type="button">-1</button>
-      <button id="decreaseByTwo" type="button">-2</button>
-    </div>
-  </section>
-</main>
-<footer class="technologies">
-  <img src="/technologies.svg" alt="List of supported technologies">
-</footer>
-<script type="module" src="/src/main.ts"></script>
+  <div id="terminal" class="terminal crt-screen">
+    <header class="zone-header"></header>
+    <main class="zone-main">
+      <div class="main-log" aria-live="polite"></div>
+      <div class="main-ticket"></div>
+    </main>
+    <aside class="zone-sidebar">
+      <nav class="sidebar-tabs">
+        <button type="button" class="sidebar-tab active" data-tab="protocols">[F1] PROTOCOLS</button>
+        <button type="button" class="sidebar-tab" data-tab="diagnostics">[F2] DIAGNOSTICS</button>
+        <button type="button" class="sidebar-tab" data-tab="manifest">[F3] MANIFEST</button>
+      </nav>
+      <div class="sidebar-content"></div>
+    </aside>
+    <footer class="zone-footer">
+      <button type="button" class="mode-toggle">[ ` ] CLI MODE</button>
+      <div class="footer-buttons"></div>
+      <div class="footer-cli" hidden>
+        <div class="cli-output"></div>
+        <label class="cli-prompt">
+          <span>OPERATOR@TERRA4_CORE&gt;</span>
+          <input type="text" class="cli-input" autocomplete="off" spellcheck="false" />
+        </label>
+      </div>
+    </footer>
+    <div class="crt-overlay" aria-hidden="true"></div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

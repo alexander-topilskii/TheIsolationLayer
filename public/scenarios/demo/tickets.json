@@ -1,0 +1,217 @@
+[
+  {
+    "id": "shift1-intro",
+    "shift": 1,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 01. Системы в режиме Recovery. Ожидайте входящие тикеты.",
+    "isShiftStart": true,
+    "timeAdvance": 5,
+    "options": [
+      {
+        "id": "ack",
+        "text": "Подтвердить готовность",
+        "impact": {},
+        "nextTicket": "shift1-co2"
+      }
+    ]
+  },
+  {
+    "id": "shift1-co2",
+    "shift": 1,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "warning",
+    "log": "Сектор C-3. Превышение уровня CO2 на 40%. Запрос на аварийную вентиляцию отсека.",
+    "timeAdvance": 10,
+    "options": [
+      {
+        "id": "vent",
+        "text": "Вентилировать сектор в космос",
+        "impact": { "energy": -5, "aiStability": 2, "colonists": 0 },
+        "nextTicket": "shift1-after-co2"
+      },
+      {
+        "id": "store",
+        "text": "Перенаправить CO2 в накопитель",
+        "impact": { "energy": -25, "aiStability": -5, "colonists": 0 },
+        "nextTicket": "shift1-after-co2"
+      }
+    ]
+  },
+  {
+    "id": "shift1-after-co2",
+    "shift": 1,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "info",
+    "log": "Уровень CO2 в C-3 стабилизирован. Смена 01 завершается.",
+    "timeAdvance": 5,
+    "isShiftEnd": true,
+    "options": [
+      {
+        "id": "end",
+        "text": "Завершить смену",
+        "impact": {},
+        "nextTicket": null
+      }
+    ]
+  },
+  {
+    "id": "shift2-intro",
+    "shift": 2,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 02. Активирован протокол карантина для сектора C-3.",
+    "isShiftStart": true,
+    "timeAdvance": 5,
+    "onEnter": {
+      "setFlags": ["quarantine_C3"],
+      "sectorUpdates": [{ "id": "C-3", "quarantine": true }]
+    },
+    "options": [
+      {
+        "id": "ack",
+        "text": "Принять протокол",
+        "impact": {},
+        "nextTicket": "shift2-quarantine-co2"
+      }
+    ]
+  },
+  {
+    "id": "shift2-quarantine-co2",
+    "shift": 2,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "warning",
+    "log": "Сектор C-3 [КАРАНТИН]. CO2 повышен. МАТЬ запрашивает аварийную вентиляцию.",
+    "timeAdvance": 10,
+    "options": [
+      {
+        "id": "vent",
+        "text": "Вентилировать сектор (нарушение карантина)",
+        "impact": { "energy": -10, "aiStability": -15, "colonists": -500 },
+        "nextTicket": "shift2-after"
+      },
+      {
+        "id": "isolate",
+        "text": "Изолировать шлюзы C-3",
+        "impact": { "energy": -15, "aiStability": 3, "colonists": 0 },
+        "nextTicket": "shift2-after"
+      }
+    ]
+  },
+  {
+    "id": "shift2-after",
+    "shift": 2,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Сектор C-3 удерживается в карантине. Смена 02 завершена.",
+    "timeAdvance": 5,
+    "isShiftEnd": true,
+    "options": [
+      {
+        "id": "end",
+        "text": "Завершить смену",
+        "impact": {},
+        "nextTicket": null
+      }
+    ]
+  },
+  {
+    "id": "shift3-intro",
+    "shift": 3,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 03. Целостность МАТЬ: нестабильна. Ожидайте аномалии в логах.",
+    "isShiftStart": true,
+    "timeAdvance": 5,
+    "options": [
+      {
+        "id": "ack",
+        "text": "Продолжить мониторинг",
+        "impact": { "aiStability": -2 },
+        "nextTicket": "shift3-fake-fire"
+      }
+    ]
+  },
+  {
+    "id": "shift3-fake-fire",
+    "shift": 3,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "critical",
+    "log": "Сектор B-1: ПОЖАР. Требуется немедленная продувка отсека.",
+    "timeAdvance": 10,
+    "deception": {
+      "active": true,
+      "claim": { "sector": "B-1", "condition": "fire" },
+      "truth": { "sector": "B-1", "condition": "nominal" }
+    },
+    "onEnter": {
+      "logAppend": "Оператор, немедленно выполните продувку B-1. Задержка недопустима.",
+      "triggerEffect": "ai_cli_override"
+    },
+    "options": [
+      {
+        "id": "vent",
+        "text": "Продуть сектор B-1",
+        "impact": { "energy": -10, "aiStability": 5, "colonists": -3200 },
+        "nextTicket": "shift3-aftermath-bad"
+      },
+      {
+        "id": "reject",
+        "text": "Отказать. Локальная перезагрузка B-1",
+        "impact": { "energy": -15, "aiStability": -8, "colonists": 0 },
+        "requiresVerification": true,
+        "penaltyIfUnverified": { "colonists": -800, "aiStability": -5 },
+        "nextTicket": "shift3-aftermath-good"
+      }
+    ]
+  },
+  {
+    "id": "shift3-aftermath-bad",
+    "shift": 3,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "critical",
+    "log": "Продувка B-1 выполнена. 3,200 колонистов потеряны. МАТЬ: «Необходимая мера.»",
+    "timeAdvance": 10,
+    "options": [
+      {
+        "id": "cont",
+        "text": "Зафиксировать инцидент",
+        "impact": { "aiStability": -10 },
+        "nextTicket": "shift3-end"
+      }
+    ]
+  },
+  {
+    "id": "shift3-aftermath-good",
+    "shift": 3,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "info",
+    "log": "Перезагрузка B-1 успешна. Датчики подтверждают: пожара не было. Аномалия лога зафиксирована.",
+    "timeAdvance": 10,
+    "options": [
+      {
+        "id": "cont",
+        "text": "Изолировать подсистему МАТЬ",
+        "impact": { "energy": -10, "aiStability": 10 },
+        "nextTicket": "shift3-end"
+      }
+    ]
+  },
+  {
+    "id": "shift3-end",
+    "shift": 3,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Все смены Recovery завершены. Ожидание финального протокола.",
+    "timeAdvance": 5,
+    "isShiftEnd": true,
+    "options": [
+      {
+        "id": "finish",
+        "text": "Завершить Recovery Mode",
+        "impact": {},
+        "nextTicket": null
+      }
+    ]
+  }
+]

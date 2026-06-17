@@ -1,0 +1,72 @@
+:root {
+  --crt-color: #00ff66;
+  --crt-color-dim: #00cc52;
+  --crt-bg: #0a0a0a;
+  --crt-glow: rgba(0, 255, 102, 0.45);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  color: var(--crt-color);
+}
+
+.crt-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: var(--crt-bg);
+  text-shadow: 0 0 6px var(--crt-glow), 0 0 12px rgba(0, 255, 102, 0.15);
+}
+
+.crt-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 10;
+}
+
+.crt-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  animation: crt-flicker 6s infinite;
+}
+
+@keyframes crt-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.97;
+  }
+  52% {
+    opacity: 0.99;
+  }
+  54% {
+    opacity: 0.96;
+  }
+}

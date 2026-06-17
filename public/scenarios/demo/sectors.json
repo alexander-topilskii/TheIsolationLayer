@@ -1,0 +1,11 @@
+[
+  { "id": "A-1", "label": "A1", "status": "nominal", "temperature": 21, "quarantine": false },
+  { "id": "A-2", "label": "A2", "status": "nominal", "temperature": 22, "quarantine": false },
+  { "id": "B-1", "label": "B1", "status": "nominal", "temperature": 22, "quarantine": false },
+  { "id": "B-2", "label": "B2", "status": "nominal", "temperature": 23, "quarantine": false },
+  { "id": "C-1", "label": "C1", "status": "nominal", "temperature": 20, "quarantine": false },
+  { "id": "C-2", "label": "C2", "status": "damaged", "temperature": 28, "quarantine": false },
+  { "id": "C-3", "label": "C3", "status": "nominal", "temperature": 24, "quarantine": false },
+  { "id": "D-1", "label": "D1", "status": "nominal", "temperature": 19, "quarantine": false },
+  { "id": "D-2", "label": "D2", "status": "offline", "temperature": 0, "quarantine": false }
+]

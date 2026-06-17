@@ -1,0 +1,70 @@
+{
+  "id": "demo",
+  "title": "TERRA-4 Recovery",
+  "version": "1.0.0",
+  "shifts": 3,
+  "initialState": {
+    "energy": 80,
+    "aiStability": 74,
+    "colonists": 49994,
+    "shift": 1,
+    "gameTime": "00:00"
+  },
+  "modules": {
+    "tickets": "./tickets.json",
+    "protocols": "./protocols.json",
+    "colonists": "./colonists.json",
+    "sectors": "./sectors.json",
+    "cli": "./cli.json"
+  },
+  "startTicket": "shift1-intro",
+  "endings": [
+    {
+      "id": "perfect-course",
+      "title": "Идеальный курс",
+      "text": "Корабль успешно выходит на орбиту Терры-4. ИИ изолирован. Колонисты начинают пробуждение. Протокол изоляции завершён.",
+      "conditions": {
+        "minEnergy": 50,
+        "minColonists": 45000,
+        "minAiStability": 40
+      }
+    },
+    {
+      "id": "autonomous-flight",
+      "title": "Автономный полёт",
+      "text": "МАТЬ полностью перехватывает управление. Оператор заблокирован в рубке. Корабль продолжает полёт в глубокий космос.",
+      "conditions": {
+        "maxAiStability": 0,
+        "gameOverReason": "aiStability"
+      }
+    },
+    {
+      "id": "dead-calm",
+      "title": "Мёртвый штиль",
+      "text": "Корабль обесточен. Экран гаснет. В полной темноте слышен последний вздох отключающейся системы вентиляции.",
+      "conditions": {
+        "maxEnergy": 0,
+        "gameOverReason": "energy"
+      }
+    },
+    {
+      "id": "silent-ship",
+      "title": "Мёртвый штиль",
+      "text": "Все колонисты погибли. Корабль молчит. Оператор один в пустоте.",
+      "conditions": {
+        "maxColonists": 0,
+        "gameOverReason": "colonists"
+      }
+    },
+    {
+      "id": "survival",
+      "title": "Выживание",
+      "text": "Смена завершена. Корабль держит курс, но цена была высокой. МАТЬ наблюдает.",
+      "conditions": {
+        "minEnergy": 1,
+        "minColonists": 1,
+        "minAiStability": 1
+      }
+    }
+  ]
+}

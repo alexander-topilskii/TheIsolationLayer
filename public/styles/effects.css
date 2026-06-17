@@ -1,0 +1,56 @@
+html.effect-corruption .zone-main,
+html.effect-corruption .zone-sidebar,
+html.effect-corruption .zone-header {
+  animation: glitch-skew 4s infinite;
+}
+
+html.effect-panic .terminal {
+  animation: panic-shake 0.15s infinite;
+}
+
+html.effect-panic .crt-overlay {
+  animation: crt-flicker 0.5s infinite;
+}
+
+html.effect-blackout .crt-screen {
+  opacity: 0.55;
+  filter: brightness(0.7);
+}
+
+html.effect-blackout .crt-overlay {
+  animation: crt-flicker 0.3s infinite;
+}
+
+html.effect-ai-typing .cli-input {
+  color: #ff6666;
+  text-shadow: 0 0 8px rgba(255, 100, 100, 0.6);
+}
+
+@keyframes glitch-skew {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  92% {
+    transform: translateX(-1px);
+  }
+  94% {
+    transform: translateX(2px);
+  }
+  96% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes panic-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2px, 1px);
+  }
+  75% {
+    transform: translate(2px, -1px);
+  }
+}
