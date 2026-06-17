@@ -271,7 +271,7 @@ export class FooterZone {
     const signal = this.aiTypingAbort.signal;
 
     this.cliInput.value = '';
-    this.cliInput.placeholder = '>>> МАТЬ ПЕРЕХВАТИЛА ВВОД...';
+    this.cliInput.placeholder = '>>> SVET ПЕРЕХВАТИЛА ВВОД...';
 
     try {
       let partial = '';
@@ -298,21 +298,39 @@ export class FooterZone {
     }
 
     const ticket = engine.getCurrentTicket();
-    const options = ticket?.options ?? [];
+    const inputMode = ticket?.inputMode ?? 'both';
 
-    this.buttonsEl.innerHTML = options
-      .map(
-        (o, i) =>
-          `<button type="button" class="action-btn" data-option="${o.id}">[ ${i + 1}: ${o.text} ]</button>`,
-      )
-      .join('');
+    if (inputMode === 'cli') {
+      this.setMode('cli');
+      this.root.querySelector('.mode-toggle')!.setAttribute('hidden', '');
+    } else {
+      this.root.querySelector('.mode-toggle')!.removeAttribute('hidden');
+    }
 
-    this.buttonsEl.querySelectorAll('.action-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-option');
-        if (id) this.onOption?.(id);
+    const options = (ticket?.options ?? []).filter(
+      (o) => !o.requiresFlag || engine.state.flags.has(o.requiresFlag),
+    );
+
+    if (inputMode === 'cli' && options.length === 0) {
+      this.buttonsEl.innerHTML =
+        '<div class="cli-hint dim">Только CLI. Введите команду согласно протоколу.</div>';
+    } else if (inputMode === 'cli') {
+      this.buttonsEl.innerHTML = '';
+    } else {
+      this.buttonsEl.innerHTML = options
+        .map(
+          (o, i) =>
+            `<button type="button" class="action-btn" data-option="${o.id}">[ ${i + 1}: ${o.text} ]</button>`,
+        )
+        .join('');
+
+      this.buttonsEl.querySelectorAll('.action-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-option');
+          if (id) this.onOption?.(id);
+        });
       });
-    });
+    }
   }
 
   private updateModeVisibility(): void {

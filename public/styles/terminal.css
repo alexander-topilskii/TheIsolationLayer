@@ -295,6 +295,11 @@
   color: rgba(0, 255, 102, 0.35);
 }
 
+.cli-hint {
+  font-size: 12px;
+  padding: 8px 0;
+}
+
 @media (max-width: 900px) {
   .terminal {
     grid-template-columns: 1fr;

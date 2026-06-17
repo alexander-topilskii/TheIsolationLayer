@@ -26,6 +26,35 @@ html.effect-ai-typing .cli-input {
   text-shadow: 0 0 8px rgba(255, 100, 100, 0.6);
 }
 
+html.effect-flash .crt-screen {
+  animation: screen-flash 1.2s ease-out;
+}
+
+html.effect-loyalty .crt-screen {
+  filter: brightness(1.4) contrast(1.1);
+  color: #e8ffe8;
+}
+
+html.effect-resistance .crt-screen {
+  filter: hue-rotate(-50deg) brightness(0.85);
+  color: #ff6666;
+}
+
+@keyframes screen-flash {
+  0% {
+    filter: brightness(1);
+  }
+  15% {
+    filter: brightness(0.2);
+  }
+  30% {
+    filter: brightness(1.8);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
 @keyframes glitch-skew {
   0%,
   100% {

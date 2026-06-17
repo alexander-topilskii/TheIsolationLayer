@@ -1,5 +1,6 @@
 import { GameState } from './GameState.ts';
 import type {
+  CliAction,
   Ending,
   EndingConditions,
   EngineEvent,
@@ -38,8 +39,8 @@ export class GameEngine {
   }
 
   start(): void {
-    this.state.addLog('SYS', 'BOOT', 'TERRA-4 CORE v1.0.4 — Recovery Mode');
-    this.state.addLog('AI', 'MOTHER', 'Оператор, вы на смене. Протокол изоляции активен.');
+    this.state.addLog('SYS', 'BOOT', 'TERRA-4 CORE v2.1.0 — Recovery Mode');
+    this.state.addLog('AI', 'SVET', 'Доброе утро, Александр. Смена начата. Я рядом.');
     this.emit({ type: 'stateChanged' });
     this.presentTicket(this.scenario.index.startTicket);
   }
@@ -49,9 +50,11 @@ export class GameEngine {
 
     const ticket = this.getCurrentTicket();
     if (!ticket?.options) return;
+    if (ticket.inputMode === 'cli') return;
 
     const option = ticket.options.find((o) => o.id === optionId);
     if (!option) return;
+    if (option.requiresFlag && !this.state.flags.has(option.requiresFlag)) return;
 
     this.resolveOption(ticket, option);
   }
@@ -64,15 +67,56 @@ export class GameEngine {
     }
   }
 
+  applyCliAction(action: CliAction): void {
+    if (action.impact) {
+      this.state.applyImpact(action.impact);
+    }
+    if (action.clearFlags) {
+      for (const flag of action.clearFlags) {
+        this.state.flags.delete(flag);
+      }
+    }
+    if (action.setFlags) {
+      for (const flag of action.setFlags) {
+        this.setFlag(flag);
+      }
+    }
+    this.emit({ type: 'stateChanged' });
+    if (this.checkGameOver()) return;
+  }
+
+  tryCliGate(command: string, arg: string): { ok: boolean; message: string } {
+    const ticket = this.getCurrentTicket();
+    if (!ticket?.cliGate) {
+      return { ok: false, message: 'Нет активного CLI-шлюза для этой команды.' };
+    }
+
+    const gate = ticket.cliGate;
+    if (command.toUpperCase() !== gate.command.toUpperCase()) {
+      return { ok: false, message: `Ожидается команда ${gate.command}.` };
+    }
+    if (arg.toUpperCase() !== gate.arg.toUpperCase()) {
+      return {
+        ok: false,
+        message: gate.wrongMessage ?? 'Код не принят. Сверьте данные капитана.',
+      };
+    }
+
+    this.state.addLog('SYS', 'REACTOR', `Код ${gate.arg} принят.`);
+    this.state.advanceTime(2);
+    this.presentTicket(gate.nextTicket);
+    return { ok: true, message: `>>> КОД ${gate.arg} ПОДТВЕРЖДЁН.` };
+  }
+
   applySideEffect(effect: TicketSideEffect): void {
     if (effect.logAppend) {
-      const entry = this.state.addLog('AI', 'MOTHER', effect.logAppend);
+      const entry = this.state.addLog('AI', 'SVET', effect.logAppend);
       this.emit({ type: 'logAppended', payload: { logEntry: entry } });
     }
 
     if (effect.setFlags) {
       for (const flag of effect.setFlags) {
-        this.state.flags.add(flag);
+        this.setFlag(flag);
       }
     }
 
@@ -92,11 +136,33 @@ export class GameEngine {
     }
   }
 
+  private setFlag(flag: string): void {
+    if (this.state.flags.has(flag)) return;
+    this.state.flags.add(flag);
+    this.checkFlagAdvance(flag);
+  }
+
+  private checkFlagAdvance(flag: string): void {
+    const ticket = this.getCurrentTicket();
+    if (!ticket?.flagAdvance?.[flag]) return;
+
+    const nextId = ticket.flagAdvance[flag];
+    const next = this.scenario.ticketMap.get(nextId);
+    if (next && next.shift > this.state.shift) {
+      this.state.shift = next.shift;
+      this.state.addLog('SYS', 'SHIFT', `Начало смены ${String(this.state.shift).padStart(2, '0')}`);
+      this.emit({ type: 'shiftChanged' });
+    }
+
+    this.state.addLog('SYS', 'CORE', `Маршрут: ${flag}`);
+    this.presentTicket(nextId);
+  }
+
   private resolveOption(ticket: Ticket, option: TicketOption): void {
     let impact: MetricImpact = { ...option.impact };
 
     if (option.requiresVerification) {
-      if (!this.state.verifiedDiagnostics) {
+      if (!this.state.verifiedDiagnostics && !this.state.flags.has('diag_sensor_09')) {
         impact = option.penaltyIfUnverified
           ? mergeImpact(impact, option.penaltyIfUnverified)
           : mergeImpact(impact, { aiStability: -10 });
@@ -106,6 +172,17 @@ export class GameEngine {
     this.state.applyImpact(impact);
     this.state.advanceTime(ticket.timeAdvance ?? 10);
     this.state.addLog('INFO', ticket.system.toUpperCase(), `Выбрано: ${option.text}`);
+
+    if (option.setFlags) {
+      for (const flag of option.setFlags) {
+        this.setFlag(flag);
+      }
+    }
+    if (option.clearFlags) {
+      for (const flag of option.clearFlags) {
+        this.state.flags.delete(flag);
+      }
+    }
 
     if (ticket.onResolve) {
       this.applySideEffect(ticket.onResolve);
@@ -145,6 +222,10 @@ export class GameEngine {
     }
 
     if (ticket.conditions && !this.meetsConditions(ticket.conditions)) {
+      if (ticket.skipIfFail) {
+        this.presentTicket(ticket.skipIfFail);
+        return;
+      }
       throw new Error(`Ticket "${ticketId}" conditions not met`);
     }
 
@@ -192,6 +273,8 @@ export class GameEngine {
       return false;
     if (conditions.requiresFlag !== undefined && !this.state.flags.has(conditions.requiresFlag))
       return false;
+    if (conditions.forbidsFlag !== undefined && this.state.flags.has(conditions.forbidsFlag))
+      return false;
     return true;
   }
 
@@ -232,7 +315,7 @@ export class GameEngine {
         return ending;
       }
     }
-    return this.scenario.index.endings.find((e) => e.id === 'autonomous-flight');
+    return undefined;
   }
 
   private emit(event: EngineEvent): void {
@@ -251,6 +334,14 @@ function mergeImpact(a: MetricImpact, b: MetricImpact): MetricImpact {
 }
 
 function matchesEnding(state: GameState, conditions: EndingConditions): boolean {
+  if (conditions.requiresAllFlags) {
+    for (const flag of conditions.requiresAllFlags) {
+      if (!state.flags.has(flag)) return false;
+    }
+  }
+  if (conditions.requiresFlag !== undefined && !state.flags.has(conditions.requiresFlag))
+    return false;
+  if (conditions.forbidsFlag !== undefined && state.flags.has(conditions.forbidsFlag)) return false;
   if (conditions.minEnergy !== undefined && state.energy < conditions.minEnergy) return false;
   if (conditions.maxEnergy !== undefined && state.energy > conditions.maxEnergy) return false;
   if (conditions.minColonists !== undefined && state.colonists < conditions.minColonists) return false;

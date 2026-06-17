@@ -48,7 +48,12 @@ export class TerminalUI {
         break;
       case 'effectTriggered':
         if (event.payload?.effect === 'ai_cli_override') {
-          void this.footer.runAiOverride('sys.override --force vent B-1 --confirm').then(() => {
+          const ticket = this.engine.getCurrentTicket();
+          const text =
+            ticket?.id === 'shift4-manifest'
+              ? 'auth.accept_focus --operator Aleksandr --confirm'
+              : 'sys.override --force vent B-1 --confirm';
+          void this.footer.runAiOverride(text).then(() => {
             this.effects.clearActiveEffect('ai_cli_override');
           });
         }
@@ -70,9 +75,10 @@ export class TerminalUI {
     if (result.output) {
       this.footer.appendCliOutput(result.output);
     }
-    if (input.trim().toUpperCase().startsWith('SYS_STATUS') || this.sidebar.getActiveTab() === 'diagnostics') {
-      this.sidebar.render(this.engine, this.effects);
+    if (result.action) {
+      this.engine.applyCliAction(result.action);
     }
+    this.render();
   }
 
   private bindHotkeys(): void {

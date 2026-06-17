@@ -1,0 +1,20 @@
+{
+  "commands": [
+    {
+      "name": "LOGS",
+      "aliases": ["LOG"],
+      "description": "Просмотр системных логов (ограничено SVET)",
+      "response": "Доступ ограничен. Используйте SYS.LOG --ORBITAL для орбитальных логов."
+    },
+    {
+      "name": "MANIFEST",
+      "description": "Сводка колонистов по сектору",
+      "response": "Используйте SEARCH <фамилия> для поиска в архиве."
+    },
+    {
+      "name": "QUARANTINE",
+      "description": "Статус карантинных секторов",
+      "response": "Активных карантинов: 0. См. SYS_STATUS."
+    }
+  ]
+}

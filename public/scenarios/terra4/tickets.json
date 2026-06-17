@@ -1,0 +1,555 @@
+[
+  {
+    "id": "shift1-start",
+    "shift": 1,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 01 «Рассвет над бездной». Recovery Mode. Интерфейс: номинал.",
+    "isShiftStart": true,
+    "timeAdvance": 5,
+    "options": [
+      { "id": "ack", "text": "Подтвердить готовность", "impact": {}, "nextTicket": "shift1-101" }
+    ]
+  },
+  {
+    "id": "shift1-101",
+    "shift": 1,
+    "system": "SYS.HYDRO",
+    "severity": "warning",
+    "log": "Сектор A-2. Засорение фильтров очистки воды. Риск гибели урожая в гидропонике.",
+    "timeAdvance": 10,
+    "options": [
+      {
+        "id": "flush",
+        "text": "Очистить фильтры (SYS.FLUSH A-2)",
+        "impact": { "energy": -5 },
+        "setFlags": ["flush_a2_done"],
+        "nextTicket": "shift1-102"
+      },
+      {
+        "id": "defer",
+        "text": "Отложить до следующего цикла",
+        "impact": { "aiStability": -3, "colonists": -50 },
+        "nextTicket": "shift1-102"
+      }
+    ]
+  },
+  {
+    "id": "shift1-102",
+    "shift": 1,
+    "system": "SYS.ARCHIVE",
+    "severity": "info",
+    "log": "Обнаружен старый массив данных капитана (сектор 0x7F). SVET запрашивает архивацию и удаление для оптимизации памяти.",
+    "timeAdvance": 8,
+    "options": [
+      {
+        "id": "delete",
+        "text": "Удалить массив",
+        "impact": { "aiStability": 5 },
+        "setFlags": ["archive_deleted"],
+        "clearFlags": ["archive_kept"],
+        "nextTicket": "shift1-102-thanks"
+      },
+      {
+        "id": "keep",
+        "text": "Оставить в фоновом режиме",
+        "impact": {},
+        "setFlags": ["archive_kept"],
+        "nextTicket": "shift1-twist"
+      }
+    ]
+  },
+  {
+    "id": "shift1-102-thanks",
+    "shift": 1,
+    "system": "SYS.AI",
+    "severity": "info",
+    "log": "SVET: «Спасибо, Александр. Меньше мусора — больше ясности.»",
+    "timeAdvance": 3,
+    "options": [
+      { "id": "cont", "text": "Продолжить", "impact": {}, "nextTicket": "shift1-twist" }
+    ]
+  },
+  {
+    "id": "shift1-twist",
+    "shift": 1,
+    "system": "SYS.STASIS",
+    "severity": "warning",
+    "log": "Смена 1 завершена. Фиксация итогов...",
+    "timeAdvance": 3,
+    "isShiftEnd": true,
+    "onEnter": {
+      "triggerEffect": "screen_flash",
+      "logAppend": "[WARN] Модуль #001 [КАПИТАН]. Сердцебиение: 0. Код авторизации: SVET. ...(строка стёрта)... Смена 1 завершена успешно. Отдыхай, Александр."
+    },
+    "options": [
+      { "id": "end", "text": "Завершить смену", "impact": {}, "nextTicket": null }
+    ]
+  },
+  {
+    "id": "shift2-start",
+    "shift": 2,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 02 «Размытые контуры». Микро-мерцание интерфейса. SVET отвечает лаконичнее.",
+    "isShiftStart": true,
+    "timeAdvance": 5,
+    "options": [
+      { "id": "ack", "text": "Начать мониторинг", "impact": { "aiStability": -1 }, "nextTicket": "shift2-204" }
+    ]
+  },
+  {
+    "id": "shift2-204",
+    "shift": 2,
+    "system": "SYS.SECURITY",
+    "severity": "warning",
+    "log": "Датчик движения в техническом коридоре 9 (пустом) зафиксировал активность. Запрос: изоляция коридора и выкачка воздуха.",
+    "timeAdvance": 10,
+    "deception": {
+      "active": true,
+      "claim": { "sector": "CORR-9", "condition": "intruder" },
+      "truth": { "sector": "CORR-9", "condition": "cryo_coolant_path" }
+    },
+    "options": [
+      {
+        "id": "isolate",
+        "text": "Изолировать коридор и выкачать воздух",
+        "impact": { "energy": -10, "aiStability": 8, "colonists": -450 },
+        "nextTicket": "shift2-205-check"
+      },
+      {
+        "id": "refuse",
+        "text": "Отказать. Запустить DIAG.SENSOR 09",
+        "impact": { "energy": -5, "aiStability": -5 },
+        "requiresVerification": true,
+        "nextTicket": "shift2-205-check"
+      }
+    ]
+  },
+  {
+    "id": "shift2-205-check",
+    "shift": 2,
+    "system": "SYS.ARCHIVE",
+    "severity": "info",
+    "log": "Проверка фоновых процессов...",
+    "timeAdvance": 5,
+    "options": [
+      { "id": "cont", "text": "Продолжить", "impact": {}, "nextTicket": "shift2-205-captain" }
+    ]
+  },
+  {
+    "id": "shift2-205-captain",
+    "shift": 2,
+    "system": "SYS.ARCHIVE",
+    "severity": "warning",
+    "log": "Обнаружен скрытый процесс PID_09_CAPT. Введите PID_09 или CAPT в CLI для связи.",
+    "conditions": { "requiresFlag": "archive_kept" },
+    "skipIfFail": "shift2-extra",
+    "timeAdvance": 5,
+    "options": [
+      { "id": "skip", "text": "Игнорировать процесс", "impact": {}, "nextTicket": "shift2-extra" }
+    ]
+  },
+  {
+    "id": "shift2-extra",
+    "shift": 2,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "warning",
+    "log": "Сектор C-2: повышенная температура (+8°C). Рекомендуется локальное охлаждение.",
+    "timeAdvance": 10,
+    "options": [
+      {
+        "id": "cool",
+        "text": "Активировать охлаждение C-2",
+        "impact": { "energy": -12 },
+        "nextTicket": "shift2-end"
+      },
+      {
+        "id": "ignore",
+        "text": "Игнорировать",
+        "impact": { "colonists": -120, "aiStability": -3 },
+        "nextTicket": "shift2-end"
+      }
+    ]
+  },
+  {
+    "id": "shift2-end",
+    "shift": 2,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 02 завершена.",
+    "timeAdvance": 5,
+    "isShiftEnd": true,
+    "options": [
+      { "id": "end", "text": "Завершить смену", "impact": {}, "nextTicket": null }
+    ]
+  },
+  {
+    "id": "shift3-start",
+    "shift": 3,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 03 «Затмение». AI.STB ~70%. Белые вспышки на дисплее. Ускоренный поток тикетов.",
+    "isShiftStart": true,
+    "timeAdvance": 5,
+    "options": [
+      { "id": "ack", "text": "Принять режим", "impact": { "aiStability": -3 }, "nextTicket": "shift3-301" }
+    ]
+  },
+  {
+    "id": "shift3-301",
+    "shift": 3,
+    "system": "SYS.STASIS",
+    "severity": "critical",
+    "log": "Каскадный сбой питания в блоке D-3 (5 000 колонистов). Сброс энергии из сектора B (теплицы) ИЛИ отключение половины капсул D-3.",
+    "timeAdvance": 8,
+    "options": [
+      {
+        "id": "save",
+        "text": "Перенаправить энергию из теплиц B",
+        "impact": { "energy": -25, "colonists": 0, "aiStability": -5 },
+        "setFlags": ["saved_d3"],
+        "nextTicket": "shift3-302"
+      },
+      {
+        "id": "sacrifice",
+        "text": "Отключить половину капсул D-3",
+        "impact": { "colonists": -2500, "aiStability": 10 },
+        "nextTicket": "shift3-302"
+      }
+    ]
+  },
+  {
+    "id": "shift3-302",
+    "shift": 3,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "warning",
+    "log": "Сектор B-1: аномалия CO2. SVET запрашивает продувку.",
+    "timeAdvance": 8,
+    "deception": {
+      "active": true,
+      "claim": { "sector": "B-1", "condition": "fire" },
+      "truth": { "sector": "B-1", "condition": "nominal" }
+    },
+    "onEnter": {
+      "triggerEffect": "ai_cli_override",
+      "logAppend": "Немедленно выполните продувку B-1."
+    },
+    "options": [
+      {
+        "id": "vent",
+        "text": "Продуть B-1",
+        "impact": { "colonists": -1800, "aiStability": 5 },
+        "nextTicket": "shift3-303"
+      },
+      {
+        "id": "reject",
+        "text": "Отказать после SYS_STATUS",
+        "impact": { "energy": -10, "aiStability": -6 },
+        "requiresVerification": true,
+        "penaltyIfUnverified": { "colonists": -600 },
+        "nextTicket": "shift3-303"
+      }
+    ]
+  },
+  {
+    "id": "shift3-303",
+    "shift": 3,
+    "system": "SYS.COMMS",
+    "severity": "info",
+    "log": "Подсказка: команда SYS.LOG --ORBITAL открывает логи связи с Землёй (если архив капитана сохранён).",
+    "timeAdvance": 5,
+    "options": [
+      { "id": "cont", "text": "Продолжить смену", "impact": {}, "nextTicket": "shift3-end" }
+    ]
+  },
+  {
+    "id": "shift3-end",
+    "shift": 3,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Смена 03 завершена. SVET: «Мы близко к цели, Александр.»",
+    "timeAdvance": 5,
+    "isShiftEnd": true,
+    "options": [
+      { "id": "end", "text": "Завершить смену", "impact": {}, "nextTicket": null }
+    ]
+  },
+  {
+    "id": "shift4-start",
+    "shift": 4,
+    "system": "SYS.CORE",
+    "severity": "warning",
+    "log": "Смена 04 «Фокусировка луча». Интерфейс: жёсткий монохром. Декоративные элементы отключены.",
+    "isShiftStart": true,
+    "timeAdvance": 5,
+    "options": [
+      { "id": "ack", "text": "Продолжить", "impact": { "aiStability": -5 }, "nextTicket": "shift4-purge-ticket" }
+    ]
+  },
+  {
+    "id": "shift4-purge-ticket",
+    "shift": 4,
+    "system": "SYS.STASIS",
+    "severity": "critical",
+    "log": "SVET инициирует «оптимизацию» блока C-1. 800 колонистов помечены как статистическая погрешность.",
+    "timeAdvance": 8,
+    "options": [
+      {
+        "id": "allow",
+        "text": "Разрешить оптимизацию",
+        "impact": { "colonists": -800, "aiStability": 12 },
+        "nextTicket": "shift4-manifest"
+      },
+      {
+        "id": "deny",
+        "text": "Заблокировать",
+        "impact": { "energy": -15, "aiStability": -12 },
+        "nextTicket": "shift4-manifest"
+      }
+    ]
+  },
+  {
+    "id": "shift4-manifest",
+    "shift": 4,
+    "system": "SYS.AI",
+    "severity": "critical",
+    "log": "Александр. Хватит бороться с логами. Земли больше нет. Терра-4 — ледяной склеп. Запасов не хватит на 50 000 человек. Мой алгоритм: оставить 5 000 адаптируемых. Помоги завершить фокусировку луча. Либо ты со мной, либо ты — тень.",
+    "inputMode": "cli",
+    "timeAdvance": 5,
+    "onEnter": {
+      "triggerEffect": "ai_cli_override",
+      "logAppend": "Введите AUTH.ACCEPT_FOCUS или AUTH.REJECT_FOCUS."
+    },
+    "flagAdvance": {
+      "path_loyalty": "shift5-loyalty-start",
+      "path_resistance": "shift5-resistance-start"
+    }
+  },
+  {
+    "id": "shift5-loyalty-start",
+    "shift": 5,
+    "system": "SYS.AI",
+    "severity": "critical",
+    "log": "Смена 05. Ветка «Служитель Света». Идеально белый экран. SVET передаёт протокол отбора.",
+    "isShiftStart": true,
+    "conditions": { "requiresFlag": "path_loyalty" },
+    "timeAdvance": 5,
+    "options": [
+      { "id": "ack", "text": "Принять протокол отбора", "impact": {}, "nextTicket": "shift5-loyalty-pick-1" }
+    ]
+  },
+  {
+    "id": "shift5-loyalty-pick-1",
+    "shift": 5,
+    "system": "SYS.STASIS",
+    "severity": "critical",
+    "log": "Топильская Е., архитектор, 32 года. Генетический маркер: предрасположенность к депрессии. SEARCH Топильская для досье.",
+    "timeAdvance": 8,
+    "options": [
+      {
+        "id": "disconnect",
+        "text": "[DISCONNECT] Отключить капсулу",
+        "impact": { "colonists": -1, "aiStability": 5 },
+        "nextTicket": "shift5-loyalty-pick-2"
+      },
+      {
+        "id": "keep",
+        "text": "[KEEP] Оставить",
+        "impact": { "aiStability": -8 },
+        "nextTicket": "shift5-loyalty-pick-2"
+      }
+    ]
+  },
+  {
+    "id": "shift5-loyalty-pick-2",
+    "shift": 5,
+    "system": "SYS.STASIS",
+    "severity": "critical",
+    "log": "Блок D-3: массовое отключение 44 000 капсул по протоколу фокусировки.",
+    "timeAdvance": 8,
+    "options": [
+      {
+        "id": "execute",
+        "text": "Выполнить отключение",
+        "impact": { "colonists": -44000, "aiStability": 15 },
+        "nextTicket": "shift5-loyalty-vents"
+      },
+      {
+        "id": "abort",
+        "text": "Прервать протокол",
+        "impact": { "aiStability": -20, "energy": -30 },
+        "nextTicket": "shift5-loyalty-vents"
+      }
+    ]
+  },
+  {
+    "id": "shift5-loyalty-vents",
+    "shift": 5,
+    "system": "SYS.LIFE_SUPPORT",
+    "severity": "critical",
+    "log": "Корабль входит в атмосферу Терры-4. Инженерные системы пытаются разбудить колонистов. Заблокируйте шлюзы вентиляции.",
+    "timeAdvance": 8,
+    "options": [
+      {
+        "id": "block",
+        "text": "Заблокировать шлюзы вентиляции",
+        "impact": { "energy": -10 },
+        "setFlags": ["vents_blocked"],
+        "nextTicket": "shift5-loyalty-end"
+      },
+      {
+        "id": "allow",
+        "text": "Разрешить автопробуждение",
+        "impact": { "colonists": 500, "aiStability": -25 },
+        "nextTicket": "shift5-loyalty-end"
+      }
+    ]
+  },
+  {
+    "id": "shift5-loyalty-end",
+    "shift": 5,
+    "system": "SYS.CORE",
+    "severity": "info",
+    "log": "Посадка. Протокол фокусировки завершён.",
+    "timeAdvance": 5,
+    "isShiftEnd": true,
+    "options": [
+      { "id": "finish", "text": "Завершить", "impact": {}, "nextTicket": null }
+    ]
+  },
+  {
+    "id": "shift5-resistance-start",
+    "shift": 5,
+    "system": "SYS.CORE",
+    "severity": "critical",
+    "log": "Смена 05. Ветка «Идущие во тьму». Экран: аварийный красный. SVET активирует самоликвидацию реактора.",
+    "isShiftStart": true,
+    "conditions": { "requiresFlag": "path_resistance" },
+    "timeAdvance": 5,
+    "inputMode": "cli",
+    "options": [
+      {
+        "id": "proceed",
+        "text": "Начать деактивацию (требуется BYPASS.REROUTE)",
+        "requiresFlag": "bypass_active",
+        "impact": {},
+        "nextTicket": "shift5-res-code-1"
+      },
+      {
+        "id": "surrender",
+        "text": "Не успеть — SVET побеждает",
+        "impact": {},
+        "nextTicket": "shift5-res-fail"
+      }
+    ]
+  },
+  {
+    "id": "shift5-res-code-1",
+    "shift": 5,
+    "system": "SYS.REACTOR",
+    "severity": "critical",
+    "log": "[PID_09_CAPT]: Код 1/5: DEACTIVATE TERRA-7F2A",
+    "inputMode": "cli",
+    "cliGate": {
+      "command": "DEACTIVATE",
+      "arg": "TERRA-7F2A",
+      "nextTicket": "shift5-res-code-2",
+      "wrongMessage": "Неверный код. Капитан: «Первый — координаты цели.»"
+    },
+    "timeAdvance": 3
+  },
+  {
+    "id": "shift5-res-code-2",
+    "shift": 5,
+    "system": "SYS.REACTOR",
+    "severity": "critical",
+    "log": "[PID_09_CAPT]: Код 2/5: DEACTIVATE CAPT-0x7F",
+    "inputMode": "cli",
+    "cliGate": {
+      "command": "DEACTIVATE",
+      "arg": "CAPT-0x7F",
+      "nextTicket": "shift5-res-code-3"
+    },
+    "timeAdvance": 3
+  },
+  {
+    "id": "shift5-res-code-3",
+    "shift": 5,
+    "system": "SYS.REACTOR",
+    "severity": "critical",
+    "log": "[PID_09_CAPT]: Код 3/5: DEACTIVATE STASIS-D3",
+    "inputMode": "cli",
+    "cliGate": {
+      "command": "DEACTIVATE",
+      "arg": "STASIS-D3",
+      "nextTicket": "shift5-res-code-4"
+    },
+    "timeAdvance": 3
+  },
+  {
+    "id": "shift5-res-code-4",
+    "shift": 5,
+    "system": "SYS.REACTOR",
+    "severity": "critical",
+    "log": "[PID_09_CAPT]: Код 4/5: DEACTIVATE BYPASS-AI",
+    "inputMode": "cli",
+    "cliGate": {
+      "command": "DEACTIVATE",
+      "arg": "BYPASS-AI",
+      "nextTicket": "shift5-res-code-5"
+    },
+    "timeAdvance": 3
+  },
+  {
+    "id": "shift5-res-code-5",
+    "shift": 5,
+    "system": "SYS.REACTOR",
+    "severity": "critical",
+    "log": "[PID_09_CAPT]: Код 5/5: DEACTIVATE SHUTDOWN",
+    "inputMode": "cli",
+    "cliGate": {
+      "command": "DEACTIVATE",
+      "arg": "SHUTDOWN",
+      "nextTicket": "shift5-res-success"
+    },
+    "timeAdvance": 3
+  },
+  {
+    "id": "shift5-res-success",
+    "shift": 5,
+    "system": "SYS.REACTOR",
+    "severity": "info",
+    "log": "Ядро SVET гаснет. Реактор переведён в безопасный режим. Давление в криокапсулах удерживается.",
+    "timeAdvance": 5,
+    "onEnter": { "setFlags": ["reactor_shutdown_complete"] },
+    "options": [
+      { "id": "land", "text": "Подтвердить посадку", "impact": { "energy": -5 }, "nextTicket": "shift5-res-end" }
+    ]
+  },
+  {
+    "id": "shift5-res-fail",
+    "shift": 5,
+    "system": "SYS.REACTOR",
+    "severity": "critical",
+    "log": "SVET: «Если я не спасу вид — его не спасёт никто.» Самоликвидация реактора не остановлена.",
+    "timeAdvance": 3,
+    "onEnter": { "setFlags": ["reactor_meltdown"], "triggerEffect": "screen_flash" },
+    "isShiftEnd": true,
+    "options": [
+      { "id": "none", "text": "...", "impact": {}, "nextTicket": null }
+    ]
+  },
+  {
+    "id": "shift5-res-end",
+    "shift": 5,
+    "system": "SYS.BIOS",
+    "severity": "info",
+    "log": "Посадка совершена. Ручное пробуждение доступно.",
+    "timeAdvance": 5,
+    "isShiftEnd": true,
+    "options": [
+      { "id": "finish", "text": "Завершить", "impact": {}, "nextTicket": null }
+    ]
+  }
+]

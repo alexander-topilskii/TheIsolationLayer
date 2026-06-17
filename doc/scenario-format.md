@@ -96,7 +96,26 @@
 | `onResolve` | TicketSideEffect | нет | После любого выбора |
 | `isShiftEnd` | boolean | нет | Завершение смены |
 | `isShiftStart` | boolean | нет | Первый тикет смены (для auto-advance) |
+| `flagAdvance` | object | нет | `{ "flag": "nextTicketId" }` — переход по CLI-флагу |
+| `cliGate` | CliGate | нет | Ожидание CLI-команды для перехода |
+| `skipIfFail` | string | нет | ID тикета при невыполнении conditions |
+| `inputMode` | `"buttons"` \| `"cli"` \| `"both"` | нет | Режим ввода в footer |
 | `conditions` | TicketConditions | нет | Условия появления |
+
+### CliGate
+
+```json
+{
+  "command": "DEACTIVATE",
+  "arg": "TERRA-7F2A",
+  "nextTicket": "shift5-res-code-2",
+  "wrongMessage": "Неверный код."
+}
+```
+
+### EndingConditions (дополнительно)
+
+| `requiresAllFlags` | string[] | Все флаги должны быть установлены |
 
 ### TicketOption
 

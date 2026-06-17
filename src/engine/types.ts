@@ -1,7 +1,8 @@
 export type TicketSeverity = 'info' | 'warning' | 'critical';
 export type SectorStatus = 'nominal' | 'damaged' | 'offline';
 export type GameStatus = 'playing' | 'ending' | 'gameover';
-export type TriggerEffect = 'ai_cli_override';
+export type TriggerEffect = 'ai_cli_override' | 'screen_flash';
+export type TicketInputMode = 'buttons' | 'cli' | 'both';
 
 export interface MetricImpact {
   energy?: number;
@@ -40,6 +41,7 @@ export interface TicketConditions {
   minAiStability?: number;
   shift?: number;
   requiresFlag?: string;
+  forbidsFlag?: string;
 }
 
 export interface TicketOption {
@@ -49,6 +51,16 @@ export interface TicketOption {
   nextTicket: string | null;
   requiresVerification?: boolean;
   penaltyIfUnverified?: MetricImpact;
+  setFlags?: string[];
+  clearFlags?: string[];
+  requiresFlag?: string;
+}
+
+export interface CliGate {
+  command: string;
+  arg: string;
+  nextTicket: string;
+  wrongMessage?: string;
 }
 
 export interface Ticket {
@@ -65,6 +77,10 @@ export interface Ticket {
   isShiftEnd?: boolean;
   isShiftStart?: boolean;
   conditions?: TicketConditions;
+  skipIfFail?: string;
+  inputMode?: TicketInputMode;
+  flagAdvance?: Record<string, string>;
+  cliGate?: CliGate;
 }
 
 export interface SectorDefinition {
@@ -83,10 +99,22 @@ export interface ColonistRecord {
   bio: string;
 }
 
+export interface CliAction {
+  setFlags?: string[];
+  clearFlags?: string[];
+  impact?: MetricImpact;
+}
+
 export interface CliCommandDef {
   name: string;
   description: string;
   response: string;
+  aliases?: string[];
+  argsPattern?: string;
+  requiresFlag?: string;
+  forbidsFlag?: string;
+  setFlags?: string[];
+  impact?: MetricImpact;
 }
 
 export interface CliModule {
@@ -103,6 +131,9 @@ export interface EndingConditions {
   maxEnergy?: number;
   maxColonists?: number;
   gameOverReason?: 'energy' | 'colonists' | 'aiStability';
+  requiresFlag?: string;
+  forbidsFlag?: string;
+  requiresAllFlags?: string[];
 }
 
 export interface Ending {

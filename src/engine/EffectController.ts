@@ -13,7 +13,12 @@ export class EffectController {
   attach(): void {
     this.unsubscribe = this.engine.subscribe((event) => {
       if (event.type === 'effectTriggered' && event.payload?.effect) {
-        this.activeEffects.add(event.payload.effect);
+        const effect = event.payload.effect;
+        if (effect === 'screen_flash') {
+          this.flashScreen();
+        } else {
+          this.activeEffects.add(effect);
+        }
         this.apply();
       }
       if (event.type === 'stateChanged' || event.type === 'shiftChanged') {
@@ -44,6 +49,12 @@ export class EffectController {
     return 0.15;
   }
 
+  private flashScreen(): void {
+    const root = document.documentElement;
+    root.classList.add('effect-flash');
+    setTimeout(() => root.classList.remove('effect-flash'), 1200);
+  }
+
   private apply(): void {
     const root = document.documentElement;
     const { energy, aiStability } = this.engine.state;
@@ -52,6 +63,14 @@ export class EffectController {
     root.classList.toggle('effect-panic', aiStability < 30);
     root.classList.toggle('effect-blackout', energy < 20);
     root.classList.toggle('effect-ai-typing', this.activeEffects.has('ai_cli_override'));
+    root.classList.toggle(
+      'effect-loyalty',
+      this.engine.state.flags.has('path_loyalty') && this.engine.state.shift >= 5,
+    );
+    root.classList.toggle(
+      'effect-resistance',
+      this.engine.state.flags.has('path_resistance') && this.engine.state.shift >= 5,
+    );
   }
 
   private clearClasses(): void {

@@ -20,6 +20,22 @@ export function validateScenario(scenario: LoadedScenario): void {
         );
       }
     }
+
+    if (ticket.skipIfFail && !ticketMap.has(ticket.skipIfFail)) {
+      errors.push(`Ticket "${ticket.id}" skipIfFail "${ticket.skipIfFail}" not found`);
+    }
+
+    if (ticket.cliGate && !ticketMap.has(ticket.cliGate.nextTicket)) {
+      errors.push(`Ticket "${ticket.id}" cliGate nextTicket not found`);
+    }
+
+    if (ticket.flagAdvance) {
+      for (const [flag, nextId] of Object.entries(ticket.flagAdvance)) {
+        if (!ticketMap.has(nextId)) {
+          errors.push(`Ticket "${ticket.id}" flagAdvance["${flag}"] -> unknown "${nextId}"`);
+        }
+      }
+    }
   }
 
   const { initialState } = index;
