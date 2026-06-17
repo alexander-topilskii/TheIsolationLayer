@@ -69,15 +69,43 @@
 ## 🚀 Как запустить проект локально
 
 1. Склонируйте репозиторий:
-   git clone https://github.com/your-username/the-isolation-layer.git
 
-2. Перейдите в папку проекта:
-   cd the-isolation-layer
+   ```bash
+   git clone https://github.com/alexander-topilskii/TheIsolationLayer.git
+   cd TheIsolationLayer
+   ```
 
-3. Запустите локальный сервер (например, через VS Code Live Server или Python):
-   python3 -m http.server 8080
+2. Установите зависимости и запустите dev-сервер:
 
-4. Откройте в браузере: http://localhost:8080
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+3. Откройте в браузере адрес из вывода Vite (обычно http://localhost:5173).
+
+### Сборка
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## 🌐 GitHub Pages
+
+Игра публикуется автоматически при push в ветку `main`:
+
+**https://alexander-topilskii.github.io/TheIsolationLayer/**
+
+Workflow: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+
+### Первоначальная настройка (один раз)
+
+1. Репозиторий → **Settings** → **Pages**
+2. **Build and deployment** → Source: **GitHub Actions**
+3. Push в `main` — деплой запустится автоматически
 
 ---
 

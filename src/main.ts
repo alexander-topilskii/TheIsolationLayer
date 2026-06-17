@@ -8,7 +8,7 @@ async function bootstrap(): Promise<void> {
     throw new Error('Terminal root element not found');
   }
 
-  const scenario = await ScenarioLoader.load('/scenarios/terra4/index.json');
+  const scenario = await ScenarioLoader.load(`${import.meta.env.BASE_URL}scenarios/terra4/index.json`);
   const engine = new GameEngine(scenario);
   const ui = new TerminalUI(engine, terminal);
 
