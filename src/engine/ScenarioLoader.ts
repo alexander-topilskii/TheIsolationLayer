@@ -17,20 +17,26 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function toAbsoluteUrl(url: string): string {
+  return new URL(url, window.location.href).href;
+}
+
 function resolveModuleUrl(baseUrl: string, relativePath: string): string {
-  const base = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+  const absoluteBase = toAbsoluteUrl(baseUrl);
+  const base = absoluteBase.substring(0, absoluteBase.lastIndexOf('/') + 1);
   return new URL(relativePath, base).href;
 }
 
 export class ScenarioLoader {
   static async load(indexUrl: string): Promise<LoadedScenario> {
-    const index = await fetchJson<ScenarioIndex>(indexUrl);
+    const absoluteIndexUrl = toAbsoluteUrl(indexUrl);
+    const index = await fetchJson<ScenarioIndex>(absoluteIndexUrl);
 
-    const ticketsUrl = resolveModuleUrl(indexUrl, index.modules.tickets);
-    const protocolsUrl = resolveModuleUrl(indexUrl, index.modules.protocols);
-    const colonistsUrl = resolveModuleUrl(indexUrl, index.modules.colonists);
-    const sectorsUrl = resolveModuleUrl(indexUrl, index.modules.sectors);
-    const cliUrl = resolveModuleUrl(indexUrl, index.modules.cli);
+    const ticketsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.tickets);
+    const protocolsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.protocols);
+    const colonistsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.colonists);
+    const sectorsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.sectors);
+    const cliUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.cli);
 
     const [tickets, protocols, colonists, sectors, cli] = await Promise.all([
       fetchJson<Ticket[]>(ticketsUrl),
