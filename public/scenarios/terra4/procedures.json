@@ -1,0 +1,58 @@
+[
+  {
+    "id": "PROC.FLUSH",
+    "label": "Промывка фильтров",
+    "shortLabel": "Промывка",
+    "manualSection": "A7",
+    "energyCost": 5,
+    "description": "Цикл очистки гидрофильтров."
+  },
+  {
+    "id": "PROC.VENT",
+    "label": "Продувка в космос",
+    "shortLabel": "Продувка",
+    "manualSection": "B3",
+    "energyCost": 10,
+    "description": "Аварийная продувка отсека."
+  },
+  {
+    "id": "PROC.ISOLATE",
+    "label": "Изоляция шлюзов",
+    "shortLabel": "Изоляция",
+    "manualSection": "B3",
+    "energyCost": 12,
+    "description": "Закрытие шлюзов без выкачки воздуха."
+  },
+  {
+    "id": "PROC.COOL",
+    "label": "Локальное охлаждение",
+    "shortLabel": "Охлаждение",
+    "manualSection": "C2",
+    "energyCost": 8,
+    "description": "Активация охлаждения сектора."
+  },
+  {
+    "id": "PROC.REROUTE",
+    "label": "Перенаправление энергии",
+    "shortLabel": "Перенаправить",
+    "manualSection": "D3",
+    "energyCost": 20,
+    "description": "Энергия из теплиц в D-3."
+  },
+  {
+    "id": "PROC.SACRIFICE",
+    "label": "Отключение капсул",
+    "shortLabel": "Отключить 50%",
+    "manualSection": "D3",
+    "energyCost": 5,
+    "description": "Жертвенное отключение половины блока."
+  },
+  {
+    "id": "PROC.REBOOT",
+    "label": "Локальная перезагрузка",
+    "shortLabel": "Перезагрузка",
+    "manualSection": "E1",
+    "energyCost": 15,
+    "description": "Перезагрузка подсистемы отсека."
+  }
+]

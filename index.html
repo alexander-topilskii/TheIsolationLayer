@@ -6,38 +6,41 @@
   <title>The Isolation Layer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles/crt.css" />
-  <link rel="stylesheet" href="./styles/terminal.css" />
-  <link rel="stylesheet" href="./styles/effects.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles/mac.css" />
 </head>
 <body>
-  <div id="terminal" class="terminal crt-screen">
-    <header class="zone-header"></header>
-    <main class="zone-main">
-      <div class="main-log" aria-live="polite"></div>
-      <div class="main-ticket"></div>
-    </main>
-    <aside class="zone-sidebar">
-      <nav class="sidebar-tabs">
-        <button type="button" class="sidebar-tab active" data-tab="protocols">[F1] PROTOCOLS</button>
-        <button type="button" class="sidebar-tab" data-tab="diagnostics">[F2] DIAGNOSTICS</button>
-        <button type="button" class="sidebar-tab" data-tab="manifest">[F3] MANIFEST</button>
-      </nav>
-      <div class="sidebar-content"></div>
-    </aside>
-    <footer class="zone-footer">
-      <button type="button" class="mode-toggle">[ ` ] CLI MODE</button>
-      <div class="footer-buttons"></div>
-      <div class="footer-cli" hidden>
-        <div class="cli-output"></div>
-        <label class="cli-prompt">
-          <span>OPERATOR@TERRA4_CORE&gt;</span>
-          <input type="text" class="cli-input" autocomplete="off" spellcheck="false" />
-        </label>
-      </div>
-    </footer>
-    <div class="crt-overlay" aria-hidden="true"></div>
+  <div id="desktop" class="desktop">
+    <header class="menu-bar">
+      <div class="menu-bar-metrics"></div>
+    </header>
+    <div class="workspace">
+      <aside class="message-feed">
+        <div class="mac-window">
+          <div class="window-titlebar">
+            <span class="window-title">Системные сообщения</span>
+          </div>
+          <div class="message-feed-body mac-inset"></div>
+        </div>
+      </aside>
+      <main class="control-panel">
+        <div class="mac-window">
+          <div class="window-titlebar">
+            <nav class="window-tabs">
+              <button type="button" class="tab-btn active" data-tab="manual">Методичка</button>
+              <button type="button" class="tab-btn" data-tab="sectors">Отсеки</button>
+              <button type="button" class="tab-btn" data-tab="actions">Действия</button>
+              <button type="button" class="tab-btn" data-tab="archive">Архив</button>
+            </nav>
+          </div>
+          <div class="control-body mac-inset"></div>
+          <footer class="control-footer">
+            <p class="control-status"></p>
+            <button type="button" class="mac-btn btn-ack" hidden>Подтвердить</button>
+          </footer>
+        </div>
+      </main>
+    </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
 </body>

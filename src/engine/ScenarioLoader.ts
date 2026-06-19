@@ -1,19 +1,16 @@
 import type {
-  CliModule,
   ColonistRecord,
+  Incident,
   LoadedScenario,
-  ProtocolsModule,
+  ManualModule,
+  Procedure,
   ScenarioIndex,
   SectorDefinition,
-  Ticket,
 } from './types.ts';
-import { validateScenario } from './validators.ts';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to load ${url}: ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`Failed to load ${url}: ${response.status}`);
   return response.json() as Promise<T>;
 }
 
@@ -32,36 +29,52 @@ export class ScenarioLoader {
     const absoluteIndexUrl = toAbsoluteUrl(indexUrl);
     const index = await fetchJson<ScenarioIndex>(absoluteIndexUrl);
 
-    const ticketsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.tickets);
-    const protocolsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.protocols);
-    const colonistsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.colonists);
-    const sectorsUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.sectors);
-    const cliUrl = resolveModuleUrl(absoluteIndexUrl, index.modules.cli);
-
-    const [tickets, protocols, colonists, sectors, cli] = await Promise.all([
-      fetchJson<Ticket[]>(ticketsUrl),
-      fetchJson<ProtocolsModule>(protocolsUrl),
-      fetchJson<ColonistRecord[]>(colonistsUrl),
-      fetchJson<SectorDefinition[]>(sectorsUrl),
-      fetchJson<CliModule>(cliUrl),
+    const [incidents, manual, procedures, colonists, sectors] = await Promise.all([
+      fetchJson<Incident[]>(resolveModuleUrl(absoluteIndexUrl, index.modules.incidents)),
+      fetchJson<ManualModule>(resolveModuleUrl(absoluteIndexUrl, index.modules.manual)),
+      fetchJson<Procedure[]>(resolveModuleUrl(absoluteIndexUrl, index.modules.procedures)),
+      fetchJson<ColonistRecord[]>(resolveModuleUrl(absoluteIndexUrl, index.modules.colonists)),
+      fetchJson<SectorDefinition[]>(resolveModuleUrl(absoluteIndexUrl, index.modules.sectors)),
     ]);
 
-    const ticketMap = new Map<string, Ticket>();
-    for (const ticket of tickets) {
-      ticketMap.set(ticket.id, ticket);
-    }
+    const incidentMap = new Map(incidents.map((i) => [i.id, i]));
+    const procedureMap = new Map(procedures.map((p) => [p.id, p]));
 
     const scenario: LoadedScenario = {
       index,
-      tickets,
-      protocols,
+      incidents,
+      incidentMap,
+      manual,
+      procedures,
+      procedureMap,
       colonists,
       sectors,
-      cli,
-      ticketMap,
     };
 
     validateScenario(scenario);
     return scenario;
   }
+}
+
+function validateScenario(scenario: LoadedScenario): void {
+  const { index, incidents, incidentMap } = scenario;
+  const errors: string[] = [];
+
+  if (!incidentMap.has(index.startIncident)) {
+    errors.push(`startIncident "${index.startIncident}" not found`);
+  }
+
+  for (const inc of incidents) {
+    if (inc.nextIncident && !incidentMap.has(inc.nextIncident)) {
+      errors.push(`Incident "${inc.id}" -> unknown next "${inc.nextIncident}"`);
+    }
+    if (inc.skipIfFail && !incidentMap.has(inc.skipIfFail)) {
+      errors.push(`Incident "${inc.id}" skipIfFail invalid`);
+    }
+    if (inc.resolution && !scenario.procedureMap.has(inc.resolution.procedure)) {
+      errors.push(`Incident "${inc.id}" unknown procedure "${inc.resolution.procedure}"`);
+    }
+  }
+
+  if (errors.length) throw new Error(`Scenario validation failed:\n${errors.join('\n')}`);
 }

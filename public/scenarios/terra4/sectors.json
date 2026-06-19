@@ -1,13 +1,70 @@
 [
-  { "id": "A-1", "label": "A1", "status": "nominal", "temperature": 21, "quarantine": false },
-  { "id": "A-2", "label": "A2", "status": "nominal", "temperature": 22, "quarantine": false },
-  { "id": "B-1", "label": "B1", "status": "nominal", "temperature": 22, "quarantine": false },
-  { "id": "B-2", "label": "B2", "status": "nominal", "temperature": 23, "quarantine": false },
-  { "id": "C-1", "label": "C1", "status": "nominal", "temperature": 20, "quarantine": false },
-  { "id": "C-2", "label": "C2", "status": "damaged", "temperature": 28, "quarantine": false },
-  { "id": "C-3", "label": "C3", "status": "nominal", "temperature": 24, "quarantine": false },
-  { "id": "D-1", "label": "D1", "status": "nominal", "temperature": 19, "quarantine": false },
-  { "id": "D-2", "label": "D2", "status": "nominal", "temperature": 20, "quarantine": false },
-  { "id": "D-3", "label": "D3", "status": "nominal", "temperature": 18, "quarantine": false },
-  { "id": "CORR-9", "label": "C9", "status": "nominal", "temperature": 17, "quarantine": false }
+  {
+    "id": "A-2",
+    "label": "A2",
+    "name": "Гидропоника",
+    "status": "nominal",
+    "temperature": 22,
+    "quarantine": false,
+    "diagnostic": [
+      { "label": "FILTER_STATUS", "value": "CLOGGED" },
+      { "label": "WATER_FLOW", "value": "42%" },
+      { "label": "CROP_STRESS", "value": "HIGH" }
+    ],
+    "diagnosticNote": "Засорение подтверждено. См. §A7 — промывка."
+  },
+  {
+    "id": "CORR-9",
+    "label": "K9",
+    "name": "Коридор 9",
+    "status": "nominal",
+    "temperature": 17,
+    "quarantine": false,
+    "diagnostic": [
+      { "label": "MOTION_SENSOR", "value": "ACTIVE" },
+      { "label": "COOLANT_PATH", "value": "CRITICAL LINK" },
+      { "label": "OCCUPANCY", "value": "0" }
+    ],
+    "diagnosticNote": "Магистраль охлаждения криокапсул. Выкачка воздуха опасна."
+  },
+  {
+    "id": "C-2",
+    "label": "C2",
+    "name": "Охлаждение",
+    "status": "damaged",
+    "temperature": 29,
+    "quarantine": false,
+    "diagnostic": [
+      { "label": "TEMP", "value": "29°C" },
+      { "label": "COOLANT", "value": "LOW" }
+    ],
+    "diagnosticNote": "Температура выше нормы. См. §C2."
+  },
+  {
+    "id": "D-3",
+    "label": "D3",
+    "name": "Криоблок",
+    "status": "nominal",
+    "temperature": 18,
+    "quarantine": false,
+    "diagnostic": [
+      { "label": "CAPSULES", "value": "5000" },
+      { "label": "POWER", "value": "CRITICAL FAIL" }
+    ],
+    "diagnosticNote": "Каскадный сбой питания. См. §D3."
+  },
+  {
+    "id": "B-1",
+    "label": "B1",
+    "name": "Теплицы",
+    "status": "nominal",
+    "temperature": 22,
+    "quarantine": false,
+    "diagnostic": [
+      { "label": "FIRE_SENSOR", "value": "NOMINAL" },
+      { "label": "CO2", "value": "NORMAL" },
+      { "label": "TEMP", "value": "22°C" }
+    ],
+    "diagnosticNote": "Пожар отсутствует. Датчики в норме."
+  }
 ]

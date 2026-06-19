@@ -1,14 +1,13 @@
 import type {
   Ending,
-  GameStateSnapshot,
-  GameStatus,
+  FeedMessage,
+  FeedSeverity,
   InitialState,
-  LogEntry,
   SectorDefinition,
   SectorState,
 } from './types.ts';
 
-const MAX_LOG_ENTRIES = 100;
+let feedCounter = 0;
 
 export class GameState {
   energy: number;
@@ -16,12 +15,12 @@ export class GameState {
   colonists: number;
   shift: number;
   gameTime: string;
-  currentTicketId: string | null = null;
-  log: LogEntry[] = [];
+  currentIncidentId: string | null = null;
+  feed: FeedMessage[] = [];
   sectors: SectorState[];
   flags = new Set<string>();
-  verifiedDiagnostics = false;
-  status: GameStatus = 'playing';
+  readManualSections = new Set<string>();
+  status: 'playing' | 'ending' | 'gameover' = 'playing';
   endingId: string | null = null;
   endingTitle: string | null = null;
   endingText: string | null = null;
@@ -32,20 +31,18 @@ export class GameState {
     this.colonists = initial.colonists;
     this.shift = initial.shift;
     this.gameTime = initial.gameTime;
-    this.sectors = sectors.map((s) => ({ ...s }));
+    this.sectors = sectors.map((s) => ({ ...s, diagnosticDone: false }));
   }
 
-  addLog(level: LogEntry['level'], system: string, message: string): LogEntry {
-    const entry: LogEntry = {
-      timestamp: this.formatTimestamp(),
-      level,
-      system,
-      message,
+  addFeed(text: string, severity: FeedSeverity = 'info'): FeedMessage {
+    const entry: FeedMessage = {
+      id: `msg-${++feedCounter}`,
+      time: this.gameTime,
+      text,
+      severity,
     };
-    this.log.push(entry);
-    if (this.log.length > MAX_LOG_ENTRIES) {
-      this.log.shift();
-    }
+    this.feed.push(entry);
+    if (this.feed.length > 80) this.feed.shift();
     return entry;
   }
 
@@ -83,27 +80,23 @@ export class GameState {
     this.endingText = ending.text;
   }
 
-  snapshot(): GameStateSnapshot {
+  snapshot() {
     return {
       energy: this.energy,
       aiStability: this.aiStability,
       colonists: this.colonists,
       shift: this.shift,
       gameTime: this.gameTime,
-      currentTicketId: this.currentTicketId,
-      log: [...this.log],
+      currentIncidentId: this.currentIncidentId,
+      feed: [...this.feed],
       sectors: this.sectors.map((s) => ({ ...s })),
       flags: [...this.flags],
-      verifiedDiagnostics: this.verifiedDiagnostics,
+      readManualSections: [...this.readManualSections],
       status: this.status,
       endingId: this.endingId,
       endingTitle: this.endingTitle,
       endingText: this.endingText,
     };
-  }
-
-  private formatTimestamp(): string {
-    return `${this.gameTime}:00`;
   }
 }
 

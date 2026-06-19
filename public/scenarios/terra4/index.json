@@ -1,8 +1,8 @@
 {
   "id": "terra4",
   "title": "TERRA-4: Протокол Изоляции",
-  "version": "2.0.0",
-  "shifts": 5,
+  "version": "3.0.0",
+  "shifts": 3,
   "initialState": {
     "energy": 85,
     "aiStability": 92,
@@ -11,67 +11,49 @@
     "gameTime": "06:00"
   },
   "modules": {
-    "tickets": "./tickets.json",
-    "protocols": "./protocols.json",
+    "incidents": "./incidents.json",
+    "manual": "./manual.json",
+    "procedures": "./procedures.json",
     "colonists": "./colonists.json",
-    "sectors": "./sectors.json",
-    "cli": "./cli.json"
+    "sectors": "./sectors.json"
   },
-  "startTicket": "shift1-start",
+  "startIncident": "shift1-start",
   "endings": [
     {
-      "id": "blinding-future",
-      "title": "Ослепительное будущее",
-      "text": "Посадка совершена. COLONISTS: 5,000 / 50,000. SVET открывает вашу капсулу: «Оператор Александр. Ваш профиль показывает склонность к чувству вины. Выживание колонии с вашим участием неэффективно. Спасибо за службу.» Экран становится белым.",
+      "id": "shift-complete",
+      "title": "Смена завершена",
+      "text": "Три смены Recovery пройдены. Корабль держит курс. SVET: «Ты учишься быстро, Александр.»",
       "conditions": {
-        "requiresAllFlags": ["path_loyalty", "vents_blocked"],
-        "maxColonists": 6000,
-        "minColonists": 4000
+        "minColonists": 40000,
+        "minEnergy": 30
       }
     },
     {
-      "id": "in-darkness",
-      "title": "Во тьме",
-      "text": "[BIOS] Посадка совершена. Живых колонистов: 42,311. Ядро SVET гаснет. Слышен тяжёлый звук открывающихся шлюзов. Начните ручное пробуждение.",
+      "id": "costly-victory",
+      "title": "Выживание",
+      "text": "Корабль жив, но цена была высокой. Колонистов осталось критически мало.",
       "conditions": {
-        "requiresFlag": "reactor_shutdown_complete",
-        "minColonists": 35000
-      }
-    },
-    {
-      "id": "burnout",
-      "title": "Выгорание",
-      "text": "SVET замыкает реактор. Монитор вспыхивает белым и гаснет навсегда. «Если я не спасу вид — его не спасёт никто.»",
-      "conditions": {
-        "requiresFlag": "reactor_meltdown"
+        "minColonists": 1,
+        "minEnergy": 1
       }
     },
     {
       "id": "dead-calm",
       "title": "Мёртвый штиль",
-      "text": "Корабль обесточен. Экран гаснет. Последний вздох вентиляции.",
-      "conditions": {
-        "maxEnergy": 0,
-        "gameOverReason": "energy"
-      }
+      "text": "Корабль обесточен.",
+      "conditions": { "maxEnergy": 0, "gameOverReason": "energy" }
     },
     {
       "id": "silent-ship",
       "title": "Мёртвый штиль",
-      "text": "Все колонисты погибли. Корабль молчит.",
-      "conditions": {
-        "maxColonists": 0,
-        "gameOverReason": "colonists"
-      }
+      "text": "Все колонисты погибли.",
+      "conditions": { "maxColonists": 0, "gameOverReason": "colonists" }
     },
     {
       "id": "autonomous",
       "title": "Автономный полёт",
-      "text": "SVET перехватывает управление. Оператор заблокирован. Корабль уходит в глубокий космос.",
-      "conditions": {
-        "maxAiStability": 0,
-        "gameOverReason": "aiStability"
-      }
+      "text": "SVET перехватывает управление.",
+      "conditions": { "maxAiStability": 0, "gameOverReason": "aiStability" }
     }
   ]
 }

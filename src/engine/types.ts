@@ -1,24 +1,12 @@
-export type TicketSeverity = 'info' | 'warning' | 'critical';
 export type SectorStatus = 'nominal' | 'damaged' | 'offline';
 export type GameStatus = 'playing' | 'ending' | 'gameover';
-export type TriggerEffect = 'ai_cli_override' | 'screen_flash';
-export type TicketInputMode = 'buttons' | 'cli' | 'both';
+export type FeedSeverity = 'info' | 'warn' | 'critical';
+export type TriggerEffect = 'screen_flash';
 
 export interface MetricImpact {
   energy?: number;
   aiStability?: number;
   colonists?: number;
-}
-
-export interface DeceptionClaim {
-  sector: string;
-  condition: string;
-}
-
-export interface Deception {
-  active: boolean;
-  claim: DeceptionClaim;
-  truth: DeceptionClaim;
 }
 
 export interface SectorUpdate {
@@ -28,67 +16,96 @@ export interface SectorUpdate {
   quarantine?: boolean;
 }
 
-export interface TicketSideEffect {
+export interface IncidentSideEffect {
   logAppend?: string;
   triggerEffect?: TriggerEffect;
   setFlags?: string[];
   sectorUpdates?: SectorUpdate[];
 }
 
-export interface TicketConditions {
-  minEnergy?: number;
-  maxEnergy?: number;
-  minAiStability?: number;
+export interface IncidentConditions {
   shift?: number;
   requiresFlag?: string;
   forbidsFlag?: string;
 }
 
-export interface TicketOption {
-  id: string;
-  text: string;
-  impact: MetricImpact;
-  nextTicket: string | null;
-  requiresVerification?: boolean;
-  penaltyIfUnverified?: MetricImpact;
-  setFlags?: string[];
-  clearFlags?: string[];
-  requiresFlag?: string;
+export interface IncidentResolution {
+  procedure: string;
+  sectorId: string;
+  requiresManual?: string;
+  requiresDiagnostic?: boolean;
 }
 
-export interface CliGate {
-  command: string;
-  arg: string;
-  nextTicket: string;
-  wrongMessage?: string;
+export interface WrongAction {
+  procedure: string;
+  feedback: string;
+  impact?: MetricImpact;
+  completesIncident?: boolean;
 }
 
-export interface Ticket {
+export interface IncidentDeception {
+  svetClaim: string;
+  truthNote: string;
+}
+
+export interface Incident {
   id: string;
   shift: number;
-  system: string;
-  severity: TicketSeverity;
-  log: string;
-  options?: TicketOption[];
-  timeAdvance?: number;
-  deception?: Deception;
-  onEnter?: TicketSideEffect;
-  onResolve?: TicketSideEffect;
-  isShiftEnd?: boolean;
+  message: string;
+  manualRef?: string;
+  sectorId?: string;
+  severity?: FeedSeverity;
+  resolution?: IncidentResolution;
+  wrongActions?: WrongAction[];
+  deception?: IncidentDeception;
+  ackOnly?: boolean;
+  onEnter?: IncidentSideEffect;
+  onResolve?: IncidentSideEffect;
+  nextIncident: string | null;
   isShiftStart?: boolean;
-  conditions?: TicketConditions;
+  isShiftEnd?: boolean;
+  conditions?: IncidentConditions;
   skipIfFail?: string;
-  inputMode?: TicketInputMode;
-  flagAdvance?: Record<string, string>;
-  cliGate?: CliGate;
+  timeAdvance?: number;
+}
+
+export interface DiagnosticReading {
+  label: string;
+  value: string;
 }
 
 export interface SectorDefinition {
   id: string;
   label: string;
+  name: string;
   status: SectorStatus;
   temperature: number;
   quarantine: boolean;
+  diagnostic: DiagnosticReading[];
+  diagnosticNote?: string;
+}
+
+export interface ManualSection {
+  id: string;
+  title: string;
+  category: string;
+  pages: string[];
+  unlocksProcedures: string[];
+}
+
+export interface ManualModule {
+  title: string;
+  version: string;
+  sections: ManualSection[];
+}
+
+export interface Procedure {
+  id: string;
+  label: string;
+  shortLabel: string;
+  manualSection: string;
+  energyCost: number;
+  description: string;
 }
 
 export interface ColonistRecord {
@@ -98,30 +115,6 @@ export interface ColonistRecord {
   sector: string;
   bio: string;
 }
-
-export interface CliAction {
-  setFlags?: string[];
-  clearFlags?: string[];
-  impact?: MetricImpact;
-}
-
-export interface CliCommandDef {
-  name: string;
-  description: string;
-  response: string;
-  aliases?: string[];
-  argsPattern?: string;
-  requiresFlag?: string;
-  forbidsFlag?: string;
-  setFlags?: string[];
-  impact?: MetricImpact;
-}
-
-export interface CliModule {
-  commands: CliCommandDef[];
-}
-
-export type ProtocolsModule = Record<string, string[]>;
 
 export interface EndingConditions {
   minEnergy?: number;
@@ -158,34 +151,43 @@ export interface ScenarioIndex {
   shifts: number;
   initialState: InitialState;
   modules: {
-    tickets: string;
-    protocols: string;
+    incidents: string;
+    manual: string;
+    procedures: string;
     colonists: string;
     sectors: string;
-    cli: string;
   };
-  startTicket: string;
+  startIncident: string;
   endings: Ending[];
 }
 
 export interface LoadedScenario {
   index: ScenarioIndex;
-  tickets: Ticket[];
-  protocols: ProtocolsModule;
+  incidents: Incident[];
+  incidentMap: Map<string, Incident>;
+  manual: ManualModule;
+  procedures: Procedure[];
+  procedureMap: Map<string, Procedure>;
   colonists: ColonistRecord[];
   sectors: SectorDefinition[];
-  cli: CliModule;
-  ticketMap: Map<string, Ticket>;
 }
 
-export interface LogEntry {
-  timestamp: string;
-  level: 'INFO' | 'WARN' | 'CRIT' | 'AI' | 'SYS';
-  system: string;
-  message: string;
+export interface FeedMessage {
+  id: string;
+  time: string;
+  text: string;
+  severity: FeedSeverity;
 }
 
-export interface SectorState extends SectorDefinition {}
+export interface SectorState extends SectorDefinition {
+  diagnosticDone: boolean;
+}
+
+export interface ProcedureResult {
+  ok: boolean;
+  feedback: string;
+  resolved: boolean;
+}
 
 export interface GameStateSnapshot {
   energy: number;
@@ -193,11 +195,11 @@ export interface GameStateSnapshot {
   colonists: number;
   shift: number;
   gameTime: string;
-  currentTicketId: string | null;
-  log: LogEntry[];
+  currentIncidentId: string | null;
+  feed: FeedMessage[];
   sectors: SectorState[];
   flags: string[];
-  verifiedDiagnostics: boolean;
+  readManualSections: string[];
   status: GameStatus;
   endingId: string | null;
   endingTitle: string | null;
@@ -206,20 +208,24 @@ export interface GameStateSnapshot {
 
 export type EngineEventType =
   | 'stateChanged'
-  | 'ticketPresented'
-  | 'ticketResolved'
+  | 'incidentPresented'
+  | 'incidentResolved'
   | 'shiftChanged'
   | 'effectTriggered'
   | 'gameEnded'
-  | 'logAppended';
+  | 'feedAppended'
+  | 'diagnosticComplete'
+  | 'manualRead'
+  | 'procedureAttempted';
 
 export interface EngineEvent {
   type: EngineEventType;
   payload?: {
-    ticket?: Ticket;
+    incident?: Incident;
     effect?: TriggerEffect;
     ending?: Ending;
-    logEntry?: LogEntry;
+    message?: FeedMessage;
+    feedback?: string;
   };
 }
 

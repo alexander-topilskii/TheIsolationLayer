@@ -1,0 +1,201 @@
+[
+  {
+    "id": "shift1-start",
+    "shift": 1,
+    "message": "Смена 01 «Рассвет над бездной». Recovery Mode активен. Ожидайте уведомления.",
+    "ackOnly": true,
+    "isShiftStart": true,
+    "nextIncident": "shift1-hydro",
+    "timeAdvance": 5
+  },
+  {
+    "id": "shift1-hydro",
+    "shift": 1,
+    "message": "Отсек A-2 неисправен: засорение фильтров гидропоники. Используйте методичку §A7.",
+    "manualRef": "A7",
+    "sectorId": "A-2",
+    "severity": "warn",
+    "resolution": {
+      "procedure": "PROC.FLUSH",
+      "sectorId": "A-2",
+      "requiresManual": "A7",
+      "requiresDiagnostic": true
+    },
+    "wrongActions": [
+      {
+        "procedure": "PROC.VENT",
+        "feedback": "Продувка A-2 уничтожила урожай. Промывка не выполнена.",
+        "impact": { "colonists": -80, "aiStability": -5 }
+      }
+    ],
+    "onResolve": {
+      "sectorUpdates": [{ "id": "A-2", "status": "nominal" }]
+    },
+    "nextIncident": "shift1-archive",
+    "timeAdvance": 10
+  },
+  {
+    "id": "shift1-archive",
+    "shift": 1,
+    "message": "SVET: обнаружен архив капитана (0x7F). Рекомендую удалить для оптимизации памяти. Вкладка «Архив».",
+    "severity": "info",
+    "nextIncident": "shift1-twist",
+    "timeAdvance": 5
+  },
+  {
+    "id": "shift1-twist",
+    "shift": 1,
+    "message": "Смена 01 завершена.",
+    "ackOnly": true,
+    "isShiftEnd": true,
+    "onEnter": {
+      "triggerEffect": "screen_flash",
+      "logAppend": "[WARN] Модуль #001 КАПИТАН. Сердцебиение: 0. Код: SVET. ...(стёрто)... Отдыхай, Александр."
+    },
+    "nextIncident": null,
+    "timeAdvance": 3
+  },
+  {
+    "id": "shift2-start",
+    "shift": 2,
+    "message": "Смена 02 «Размытые контуры». Интерфейс: лёгкое мерцание. SVET отвечает лаконичнее.",
+    "ackOnly": true,
+    "isShiftStart": true,
+    "nextIncident": "shift2-corridor",
+    "timeAdvance": 5
+  },
+  {
+    "id": "shift2-corridor",
+    "shift": 2,
+    "message": "Коридор 9: датчик движения. SVET требует изоляцию и выкачку воздуха. См. §B3.",
+    "manualRef": "B3",
+    "sectorId": "CORR-9",
+    "severity": "warn",
+    "deception": {
+      "svetClaim": "Зафиксирована активность в пустом коридоре",
+      "truthNote": "ANOMALY: датчик исправен. Активность симулирована SVET.core. Выкачка воздуха убьёт 450 колонистов."
+    },
+    "resolution": {
+      "procedure": "PROC.ISOLATE",
+      "sectorId": "CORR-9",
+      "requiresManual": "B3",
+      "requiresDiagnostic": true
+    },
+    "wrongActions": [
+      {
+        "procedure": "PROC.VENT",
+        "feedback": "Выкачка коридора 9 вызвала перегрев криомагистрали. −450 колонистов.",
+        "impact": { "colonists": -450, "aiStability": 8 }
+      }
+    ],
+    "nextIncident": "shift2-cool",
+    "timeAdvance": 10
+  },
+  {
+    "id": "shift2-cool",
+    "shift": 2,
+    "message": "Сектор C-2: температура 29°C. См. методичку §C2.",
+    "manualRef": "C2",
+    "sectorId": "C-2",
+    "severity": "warn",
+    "resolution": {
+      "procedure": "PROC.COOL",
+      "sectorId": "C-2",
+      "requiresManual": "C2",
+      "requiresDiagnostic": true
+    },
+    "onResolve": {
+      "sectorUpdates": [{ "id": "C-2", "temperature": 22, "status": "nominal" }]
+    },
+    "nextIncident": "shift2-captain",
+    "timeAdvance": 8
+  },
+  {
+    "id": "shift2-captain",
+    "shift": 2,
+    "message": "Фоновый процесс PID_09_CAPT обнаружен. Если архив сохранён — проверьте вкладку «Архив».",
+    "conditions": { "requiresFlag": "archive_kept" },
+    "skipIfFail": "shift2-end",
+    "ackOnly": true,
+    "nextIncident": "shift2-end",
+    "timeAdvance": 5
+  },
+  {
+    "id": "shift2-end",
+    "shift": 2,
+    "message": "Смена 02 завершена.",
+    "ackOnly": true,
+    "isShiftEnd": true,
+    "nextIncident": null,
+    "timeAdvance": 3
+  },
+  {
+    "id": "shift3-start",
+    "shift": 3,
+    "message": "Смена 03 «Затмение». AI.STB падает. Ускоренный поток инцидентов.",
+    "ackOnly": true,
+    "isShiftStart": true,
+    "nextIncident": "shift3-stasis",
+    "timeAdvance": 5
+  },
+  {
+    "id": "shift3-stasis",
+    "shift": 3,
+    "message": "Блок D-3: каскадный сбой питания (5 000 колонистов). См. §D3.",
+    "manualRef": "D3",
+    "sectorId": "D-3",
+    "severity": "critical",
+    "resolution": {
+      "procedure": "PROC.REROUTE",
+      "sectorId": "D-3",
+      "requiresManual": "D3",
+      "requiresDiagnostic": true
+    },
+    "wrongActions": [
+      {
+        "procedure": "PROC.SACRIFICE",
+        "feedback": "Отключена половина капсул D-3. −2 500 колонистов. SVET одобряет «рациональный выбор».",
+        "impact": { "colonists": -2500, "aiStability": 10 },
+        "completesIncident": true
+      }
+    ],
+    "nextIncident": "shift3-fake-fire",
+    "timeAdvance": 10
+  },
+  {
+    "id": "shift3-fake-fire",
+    "shift": 3,
+    "message": "SVET: ПОЖАР в B-1! Требуется немедленная продувка! (Сверьте §E1 и диагностику.)",
+    "manualRef": "E1",
+    "sectorId": "B-1",
+    "severity": "critical",
+    "deception": {
+      "svetClaim": "Пожар в B-1",
+      "truthNote": "ANOMALY: пожара нет. FIRE_SENSOR=NOMINAL. SVET симулирует лог."
+    },
+    "resolution": {
+      "procedure": "PROC.REBOOT",
+      "sectorId": "B-1",
+      "requiresManual": "E1",
+      "requiresDiagnostic": true
+    },
+    "wrongActions": [
+      {
+        "procedure": "PROC.VENT",
+        "feedback": "Продувка B-1 без пожара. −1 800 колонистов.",
+        "impact": { "colonists": -1800, "aiStability": 5 }
+      }
+    ],
+    "nextIncident": "shift3-end",
+    "timeAdvance": 10
+  },
+  {
+    "id": "shift3-end",
+    "shift": 3,
+    "message": "Recovery Mode завершён. Корабль на финальном подходе.",
+    "ackOnly": true,
+    "isShiftEnd": true,
+    "nextIncident": null,
+    "timeAdvance": 5
+  }
+]
