@@ -31,6 +31,9 @@
     "onResolve": {
       "sectorUpdates": [{ "id": "A-2", "status": "nominal" }]
     },
+    "onEnter": {
+      "logAppend": "Подсказка: §A7 → отсек A2 → диагностика → Промывка."
+    },
     "nextIncident": "shift1-archive",
     "timeAdvance": 10
   },

@@ -2,12 +2,22 @@ import type {
   Ending,
   FeedMessage,
   FeedSeverity,
+  GameStateSnapshot,
   InitialState,
   SectorDefinition,
   SectorState,
 } from './types.ts';
 
 let feedCounter = 0;
+
+function syncFeedCounter(feed: FeedMessage[]): void {
+  for (const msg of feed) {
+    const match = /^msg-(\d+)$/.exec(msg.id);
+    if (match) {
+      feedCounter = Math.max(feedCounter, Number(match[1]));
+    }
+  }
+}
 
 export class GameState {
   energy: number;
@@ -80,7 +90,7 @@ export class GameState {
     this.endingText = ending.text;
   }
 
-  snapshot() {
+  snapshot(): GameStateSnapshot {
     return {
       energy: this.energy,
       aiStability: this.aiStability,
@@ -88,7 +98,7 @@ export class GameState {
       shift: this.shift,
       gameTime: this.gameTime,
       currentIncidentId: this.currentIncidentId,
-      feed: [...this.feed],
+      feed: this.feed.map((m) => ({ ...m })),
       sectors: this.sectors.map((s) => ({ ...s })),
       flags: [...this.flags],
       readManualSections: [...this.readManualSections],
@@ -97,6 +107,24 @@ export class GameState {
       endingTitle: this.endingTitle,
       endingText: this.endingText,
     };
+  }
+
+  restore(snapshot: GameStateSnapshot): void {
+    this.energy = snapshot.energy;
+    this.aiStability = snapshot.aiStability;
+    this.colonists = snapshot.colonists;
+    this.shift = snapshot.shift;
+    this.gameTime = snapshot.gameTime;
+    this.currentIncidentId = snapshot.currentIncidentId;
+    this.feed = snapshot.feed.map((m) => ({ ...m }));
+    syncFeedCounter(this.feed);
+    this.sectors = snapshot.sectors.map((s) => ({ ...s }));
+    this.flags = new Set(snapshot.flags);
+    this.readManualSections = new Set(snapshot.readManualSections);
+    this.status = snapshot.status;
+    this.endingId = snapshot.endingId;
+    this.endingTitle = snapshot.endingTitle;
+    this.endingText = snapshot.endingText;
   }
 }
 

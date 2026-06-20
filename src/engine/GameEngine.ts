@@ -1,3 +1,16 @@
+import type { I18n } from '../i18n/I18n.ts';
+import {
+  captLogLines,
+  endingText,
+  endingTitle,
+  incidentLogAppend,
+  incidentMessage,
+  incidentTruthNote,
+  incidentWrongFeedback,
+  procedureLabel,
+  sectionTitle,
+  sectorDiagnosticNote,
+} from '../i18n/scenario-en.ts';
 import { GameState } from './GameState.ts';
 import type {
   EndingConditions,
@@ -13,10 +26,13 @@ import type {
 export class GameEngine {
   readonly scenario: LoadedScenario;
   readonly state: GameState;
+  readonly i18n: I18n;
   private listeners: EngineListener[] = [];
+  private started = false;
 
-  constructor(scenario: LoadedScenario) {
+  constructor(scenario: LoadedScenario, i18n: I18n) {
     this.scenario = scenario;
+    this.i18n = i18n;
     this.state = new GameState(scenario.index.initialState, scenario.sectors);
   }
 
@@ -33,10 +49,18 @@ export class GameEngine {
   }
 
   start(): void {
-    this.pushFeed('Система TERRA-4 v3.0 — режим оператора.', 'info');
-    this.pushFeed('SVET: Доброе утро, Александр. Смена начата.', 'info');
+    if (this.started) return;
+    this.started = true;
+    this.pushFeed(this.i18n.t('systemBoot'), 'info');
+    this.pushFeed(this.i18n.t('svetMorning'), 'info');
     this.emit({ type: 'stateChanged' });
     this.presentIncident(this.scenario.index.startIncident);
+  }
+
+  restore(snapshot: ReturnType<GameState['snapshot']>): void {
+    this.started = true;
+    this.state.restore(snapshot);
+    this.emit({ type: 'stateChanged' });
   }
 
   readManualSection(sectionId: string): void {
@@ -44,7 +68,12 @@ export class GameEngine {
       this.state.readManualSections.add(sectionId);
       const section = this.scenario.manual.sections.find((s) => s.id === sectionId);
       if (section) {
-        this.pushFeed(`Методичка: открыт раздел ${section.title}`, 'info');
+        this.pushFeed(
+          this.i18n.t('manualOpened', {
+            title: sectionTitle(section, this.i18n.locale),
+          }),
+          'info',
+        );
       }
       this.emit({ type: 'manualRead' });
       this.emit({ type: 'stateChanged' });
@@ -53,109 +82,125 @@ export class GameEngine {
 
   runDiagnostic(sectorId: string): string {
     const sector = this.state.sectors.find((s) => s.id === sectorId);
-    if (!sector) return 'Отсек не найден.';
+    if (!sector) return this.i18n.t('sectorNotFound');
 
     sector.diagnosticDone = true;
     const incident = this.getCurrentIncident();
-    let note = sector.diagnosticNote ?? 'Диагностика завершена.';
+    let note = sector.diagnosticNote ?? this.i18n.t('diagnosticDefault');
 
     if (incident?.deception && incident.sectorId === sectorId) {
-      note = incident.deception.truthNote;
+      note = incidentTruthNote(incident, this.i18n.locale) ?? note;
+    } else if (sector.diagnosticNote) {
+      const def = this.scenario.sectors.find((s) => s.id === sectorId);
+      if (def) {
+        note = sectorDiagnosticNote(def, this.i18n.locale) ?? note;
+      }
     }
 
-    this.pushFeed(`Диагностика ${sector.label}: ${note}`, 'warn');
+    const label = sector.label;
+    const feedback = this.i18n.t('diagnosticHeader', { label, note });
+    this.pushFeed(feedback, 'warn');
     this.emit({ type: 'diagnosticComplete', payload: { feedback: note } });
     this.emit({ type: 'stateChanged' });
     return note;
   }
 
-  executeProcedure(procedureId: string, sectorId: string): ProcedureResult {
+  executeProcedure(procedureId: string, sectorId?: string): ProcedureResult {
     if (this.state.status !== 'playing') {
-      return { ok: false, feedback: 'Смена завершена.', resolved: false };
+      return this.fail(this.i18n.t('errShiftEnded'));
     }
 
     const procedure = this.scenario.procedureMap.get(procedureId);
     if (!procedure) {
-      return { ok: false, feedback: 'Процедура не найдена.', resolved: false };
+      return this.fail(this.i18n.t('errProcedureNotFound'));
     }
 
     const incident = this.getCurrentIncident();
     if (!incident?.resolution) {
-      return { ok: false, feedback: 'Нет активного инцидента, требующего действий.', resolved: false };
-    }
-
-    if (!this.state.readManualSections.has(procedure.manualSection)) {
-      return {
-        ok: false,
-        feedback: `Процедура «${procedure.label}» не изучена. Откройте §${procedure.manualSection} в методичке.`,
-        resolved: false,
-      };
+      return this.fail(this.i18n.t('errNoActiveIncident'));
     }
 
     const res = incident.resolution;
-    this.state.applyImpact({ energy: -procedure.energyCost });
+    const targetSector = res.sectorId;
+    const procLabel = procedureLabel(procedure, this.i18n.locale);
 
-    const wrong = incident.wrongActions?.find((w) => w.procedure === procedureId);
-    if (wrong) {
-      if (res.requiresManual && !this.state.readManualSections.has(res.requiresManual)) {
-        return {
-          ok: false,
-          feedback: `Сначала изучите §${res.requiresManual} в методичке.`,
-          resolved: false,
-        };
-      }
-      if (res.requiresDiagnostic) {
-        const sector = this.state.sectors.find((s) => s.id === sectorId);
-        if (!sector?.diagnosticDone) {
-          return {
-            ok: false,
-            feedback: 'Сначала выполните диагностику выбранного отсека.',
-            resolved: false,
-          };
-        }
-      }
-      if (wrong.impact) this.state.applyImpact(wrong.impact);
-      this.pushFeed(wrong.feedback, 'warn');
-      this.emit({ type: 'procedureAttempted', payload: { feedback: wrong.feedback } });
-      this.emit({ type: 'stateChanged' });
-      if (wrong.completesIncident) {
-        this.resolveIncident(incident, procedure.label);
-        return { ok: true, feedback: wrong.feedback, resolved: true };
-      }
-      if (this.checkGameOver()) return { ok: false, feedback: wrong.feedback, resolved: false };
-      return { ok: false, feedback: wrong.feedback, resolved: false };
+    if (!this.state.readManualSections.has(procedure.manualSection)) {
+      return this.fail(
+        this.i18n.t('errProcedureNotStudied', {
+          label: procLabel,
+          section: procedure.manualSection,
+        }),
+      );
     }
 
-    const sectorMatch = res.sectorId === sectorId;
-    const procedureMatch = res.procedure === procedureId;
-
     if (res.requiresManual && !this.state.readManualSections.has(res.requiresManual)) {
-      return {
-        ok: false,
-        feedback: `Сначала изучите §${res.requiresManual} в методичке.`,
-        resolved: false,
-      };
+      return this.fail(
+        this.i18n.t('errManualRequired', { section: res.requiresManual }),
+      );
     }
 
     if (res.requiresDiagnostic) {
-      const sector = this.state.sectors.find((s) => s.id === sectorId);
-      if (!sector?.diagnosticDone) {
-        return {
-          ok: false,
-          feedback: 'Сначала выполните диагностику выбранного отсека.',
-          resolved: false,
-        };
+      const target = this.state.sectors.find((s) => s.id === targetSector);
+      if (!target?.diagnosticDone) {
+        return this.fail(
+          this.i18n.t('errDiagnosticRequired', { sector: targetSector }),
+        );
       }
     }
 
-    if (!sectorMatch || !procedureMatch) {
-      const fb = `Процедура «${procedure.label}» на ${sectorId} не соответствует текущему инциденту. Сверьтесь с методичкой.`;
-      this.pushFeed(fb, 'info');
-      return { ok: false, feedback: fb, resolved: false };
+    const appliedSector = sectorId ?? targetSector;
+    if (appliedSector !== targetSector) {
+      return this.fail(
+        this.i18n.t('errWrongSector', {
+          target: targetSector,
+          applied: appliedSector,
+        }),
+      );
     }
 
-    this.resolveIncident(incident, procedure.label);
-    return { ok: true, feedback: `Выполнено: ${procedure.label} → ${sectorId}`, resolved: true };
+    const wrong = incident.wrongActions?.find((w) => w.procedure === procedureId);
+    if (wrong) {
+      this.state.applyImpact({ energy: -procedure.energyCost });
+      if (wrong.impact) this.state.applyImpact(wrong.impact);
+      const feedback = incidentWrongFeedback(
+        incident.id,
+        procedureId,
+        wrong.feedback,
+        this.i18n.locale,
+      );
+      this.pushFeed(feedback, 'warn');
+      this.emit({ type: 'procedureAttempted', payload: { feedback } });
+      this.emit({ type: 'stateChanged' });
+      if (wrong.completesIncident) {
+        this.resolveIncident(incident, procLabel);
+        return { ok: true, feedback, resolved: true };
+      }
+      if (this.checkGameOver()) return { ok: false, feedback, resolved: false };
+      return { ok: false, feedback, resolved: false };
+    }
+
+    if (res.procedure !== procedureId) {
+      return this.fail(
+        this.i18n.t('errWrongProcedure', {
+          label: procLabel,
+          section: incident.manualRef ?? '?',
+        }),
+      );
+    }
+
+    this.state.applyImpact({ energy: -procedure.energyCost });
+    const successMsg = this.i18n.t('procedureDone', {
+      label: procLabel,
+      sector: targetSector,
+    });
+    this.resolveIncident(incident, procLabel);
+    return { ok: true, feedback: successMsg, resolved: true };
+  }
+
+  private fail(feedback: string): ProcedureResult {
+    this.pushFeed(feedback, 'warn');
+    this.emit({ type: 'procedureAttempted', payload: { feedback } });
+    return { ok: false, feedback, resolved: false };
   }
 
   acknowledge(): void {
@@ -163,12 +208,11 @@ export class GameEngine {
     if (!incident?.ackOnly || this.state.status !== 'playing') return;
 
     this.state.advanceTime(incident.timeAdvance ?? 5);
-    this.pushFeed('— подтверждено —', 'info');
+    this.pushFeed(this.i18n.t('acknowledged'), 'info');
     this.emit({ type: 'incidentResolved', payload: { incident } });
     this.advanceToNext(incident.nextIncident, incident);
   }
 
-  /** Специальные действия панели «Архив» */
   archiveAction(action: 'delete' | 'keep'): void {
     const incident = this.getCurrentIncident();
     if (!incident || incident.id !== 'shift1-archive') return;
@@ -176,20 +220,48 @@ export class GameEngine {
     if (action === 'delete') {
       this.state.flags.add('archive_deleted');
       this.state.applyImpact({ aiStability: 5 });
-      this.pushFeed('SVET: Спасибо, Александр. Меньше мусора — больше ясности.', 'info');
+      this.pushFeed(this.i18n.t('svetArchiveThanks'), 'info');
     } else {
       this.state.flags.add('archive_kept');
-      this.pushFeed('Архив капитана оставлен в фоновом режиме.', 'info');
+      this.pushFeed(this.i18n.t('archiveBackground'), 'info');
     }
 
     this.resolveIncidentFlow(incident);
   }
 
+  getCaptLogLines(): string[] {
+    return captLogLines(this.i18n.locale);
+  }
+
+  getDisplayEnding(): { title: string; text: string } {
+    const id = this.state.endingId;
+    if (!id) {
+      return {
+        title: this.state.endingTitle ?? '',
+        text: this.state.endingText ?? '',
+      };
+    }
+    const ending = this.scenario.index.endings.find((e) => e.id === id);
+    if (!ending) {
+      return {
+        title: this.state.endingTitle ?? '',
+        text: this.state.endingText ?? '',
+      };
+    }
+    return {
+      title: endingTitle(ending, this.i18n.locale),
+      text: endingText(ending, this.i18n.locale),
+    };
+  }
+
   private resolveIncident(incident: Incident, procedureLabel: string): void {
     this.state.advanceTime(incident.timeAdvance ?? 10);
-    this.pushFeed(`Инцидент устранён: ${procedureLabel}`, 'info');
+    this.pushFeed(
+      this.i18n.t('incidentResolved', { label: procedureLabel }),
+      'info',
+    );
 
-    if (incident.onResolve) this.applySideEffect(incident.onResolve);
+    if (incident.onResolve) this.applySideEffect(incident.onResolve, incident.id);
 
     this.emit({ type: 'incidentResolved', payload: { incident } });
     this.emit({ type: 'stateChanged' });
@@ -200,7 +272,7 @@ export class GameEngine {
 
   private resolveIncidentFlow(incident: Incident): void {
     this.state.advanceTime(incident.timeAdvance ?? 8);
-    if (incident.onResolve) this.applySideEffect(incident.onResolve);
+    if (incident.onResolve) this.applySideEffect(incident.onResolve, incident.id);
     this.emit({ type: 'incidentResolved', payload: { incident } });
     this.emit({ type: 'stateChanged' });
     if (this.checkGameOver()) return;
@@ -236,9 +308,10 @@ export class GameEngine {
     }
 
     this.state.currentIncidentId = incidentId;
-    const msg = this.pushFeed(incident.message, incident.severity ?? 'info');
+    const text = incidentMessage(incident, this.i18n.locale);
+    const msg = this.pushFeed(text, incident.severity ?? 'info');
 
-    if (incident.onEnter) this.applySideEffect(incident.onEnter);
+    if (incident.onEnter) this.applySideEffect(incident.onEnter, incident.id);
 
     this.emit({ type: 'feedAppended', payload: { message: msg } });
     this.emit({ type: 'incidentPresented', payload: { incident } });
@@ -254,7 +327,12 @@ export class GameEngine {
     this.state.sectors.forEach((s) => {
       s.diagnosticDone = false;
     });
-    this.pushFeed(`——— Смена ${String(this.state.shift).padStart(2, '0')} ———`, 'info');
+    this.pushFeed(
+      this.i18n.t('shiftComplete', {
+        shift: String(this.state.shift).padStart(2, '0'),
+      }),
+      'info',
+    );
     this.emit({ type: 'shiftChanged' });
     this.emit({ type: 'stateChanged' });
 
@@ -265,8 +343,11 @@ export class GameEngine {
     else this.checkVictoryEnding();
   }
 
-  private applySideEffect(effect: IncidentSideEffect): void {
-    if (effect.logAppend) this.pushFeed(effect.logAppend, 'warn');
+  private applySideEffect(effect: IncidentSideEffect, incidentId: string): void {
+    if (effect.logAppend) {
+      const text = incidentLogAppend(incidentId, effect.logAppend, this.i18n.locale);
+      this.pushFeed(text, 'warn');
+    }
     if (effect.setFlags) effect.setFlags.forEach((f) => this.state.flags.add(f));
     if (effect.sectorUpdates) {
       for (const u of effect.sectorUpdates) {
@@ -291,8 +372,7 @@ export class GameEngine {
   }
 
   private pushFeed(text: string, severity: FeedMessage['severity']): FeedMessage {
-    const msg = this.state.addFeed(text, severity);
-    return msg;
+    return this.state.addFeed(text, severity);
   }
 
   private checkGameOver(): boolean {

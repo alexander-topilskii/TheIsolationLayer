@@ -1,6 +1,21 @@
 import type { GameEngine } from '../engine/GameEngine.ts';
+import {
+  colonistBio,
+  incidentTruthNote,
+  procedureShortLabel,
+  sectionPages,
+  sectionTitle,
+  sectorDiagnosticNote,
+  sectorName,
+} from '../i18n/scenario-en.ts';
 
 export type ControlTab = 'manual' | 'sectors' | 'actions' | 'archive';
+
+export interface ControlUiState {
+  activeTab: ControlTab;
+  selectedSectorId: string | null;
+  selectedManualId: string | null;
+}
 
 export class ControlPanel {
   private root: HTMLElement;
@@ -24,13 +39,57 @@ export class ControlPanel {
     });
   }
 
+  getUiState(): ControlUiState {
+    return {
+      activeTab: this.activeTab,
+      selectedSectorId: this.selectedSectorId,
+      selectedManualId: this.selectedManualId,
+    };
+  }
+
+  applyUiState(state: ControlUiState): void {
+    this.activeTab = state.activeTab;
+    this.selectedSectorId = state.selectedSectorId;
+    this.selectedManualId = state.selectedManualId;
+    this.lastFeedback = this.statusHint(this.engine.getCurrentIncident());
+  }
+
+  onIncidentPresented(incident: import('../engine/types.ts').Incident | null): void {
+    if (incident?.sectorId) {
+      this.selectedSectorId = incident.sectorId;
+    }
+    if (incident?.manualRef) {
+      this.selectedManualId = incident.manualRef;
+    }
+    this.lastFeedback = this.statusHint(incident);
+  }
+
+  renderTabs(): void {
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
+    const labels: Record<ControlTab, string> = {
+      manual: t('tabManual'),
+      sectors: t('tabSectors'),
+      actions: t('tabActions'),
+      archive: t('tabArchive'),
+    };
+    this.root.querySelectorAll('[data-tab]').forEach((btn) => {
+      const tab = btn.getAttribute('data-tab') as ControlTab;
+      btn.textContent = labels[tab];
+    });
+    const ackBtn = this.root.querySelector('.btn-ack') as HTMLButtonElement;
+    if (ackBtn) ackBtn.textContent = t('btnAck');
+  }
+
   render(): void {
+    this.renderTabs();
+
     this.root.querySelectorAll('[data-tab]').forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-tab') === this.activeTab);
     });
 
     const body = this.root.querySelector('.control-body') as HTMLElement;
     const incident = this.engine.getCurrentIncident();
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
 
     switch (this.activeTab) {
       case 'manual':
@@ -61,46 +120,67 @@ export class ControlPanel {
       ackBtn.hidden = !(incident?.ackOnly && this.engine.state.status === 'playing');
       ackBtn.onclick = () => {
         this.engine.acknowledge();
-        this.lastFeedback = 'Смена продолжается.';
+        this.lastFeedback = t('shiftContinues');
         this.onUpdate();
       };
     }
   }
 
   private statusHint(incident: ReturnType<GameEngine['getCurrentIncident']>): string {
-    if (!incident) return 'Ожидание...';
-    if (incident.ackOnly) return 'Подтвердите уведомление для продолжения.';
-    if (incident.id === 'shift1-archive') return 'Выберите действие в архиве.';
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
+    if (!incident) return t('waiting');
+    if (incident.ackOnly) return t('ackHint');
+    if (incident.id === 'shift1-archive') return t('archiveHint');
     if (incident.resolution) {
-      const parts = ['Изучите методичку'];
-      if (incident.manualRef) parts.push(`§${incident.manualRef}`);
-      parts.push('→ диагностика отсека → процедура');
-      return parts.join(' ');
+      const steps: string[] = [];
+      const res = incident.resolution;
+      if (res.requiresManual) {
+        const done = this.engine.state.readManualSections.has(res.requiresManual);
+        steps.push(
+          `${done ? '✓' : '1.'} ${t('stepManual', { section: res.requiresManual })}`,
+        );
+      }
+      if (res.requiresDiagnostic) {
+        const sector = this.engine.state.sectors.find((s) => s.id === res.sectorId);
+        steps.push(
+          `${sector?.diagnosticDone ? '✓' : '2.'} ${t('stepDiagnostic', { sector: res.sectorId })}`,
+        );
+      }
+      const proc = this.engine.scenario.procedureMap.get(res.procedure);
+      const actionLabel = proc
+        ? procedureShortLabel(proc, this.engine.i18n.locale)
+        : res.procedure;
+      steps.push(`3. ${t('stepAction', { action: actionLabel })}`);
+      return steps.join(' → ');
     }
     return '';
   }
 
   private renderManual(): string {
     const { manual } = this.engine.scenario;
+    const locale = this.engine.i18n.locale;
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
+
     const sections = manual.sections
       .map((s) => {
         const read = this.engine.state.readManualSections.has(s.id);
         const active = this.selectedManualId === s.id;
+        const title = sectionTitle(s, locale);
         return `<button type="button" class="manual-item ${read ? 'read' : ''} ${active ? 'active' : ''}" data-section="${s.id}">
-          ${s.title}${read ? ' ✓' : ''}
+          ${escapeHtml(title)}${read ? ' ✓' : ''}
         </button>`;
       })
       .join('');
 
     const section = manual.sections.find((s) => s.id === this.selectedManualId);
-    const content = section
-      ? section.pages.map((p) => `<p>${escapeHtml(p)}</p>`).join('')
-      : '<p class="hint">Выберите раздел методички слева.</p>';
+    const sectionContent = section
+      ? sectionPages(section, locale).map((p) => `<p>${escapeHtml(p)}</p>`).join('')
+      : `<p class="hint">${t('manualSelectHint')}</p>`;
 
     return `
       <div class="manual-layout">
         <div class="manual-list">${sections}</div>
-        <div class="manual-content mac-inset">${content}</div>
+        <div class="manual-content mac-inset">${sectionContent}</div>
       </div>
     `;
   }
@@ -118,33 +198,47 @@ export class ControlPanel {
   }
 
   private renderSectors(): string {
+    const locale = this.engine.i18n.locale;
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
+    const qTag = t('quarantineTag');
+
     const list = this.engine.state.sectors
       .map((s) => {
         const active = this.selectedSectorId === s.id;
         const icon = s.status === 'nominal' ? '●' : s.status === 'damaged' ? '▲' : '○';
-        const q = s.quarantine ? ' [Q]' : '';
+        const q = s.quarantine ? qTag : '';
+        const def = this.engine.scenario.sectors.find((d) => d.id === s.id)!;
+        const name = sectorName(def, locale);
         return `<button type="button" class="sector-row ${active ? 'active' : ''}" data-sector="${s.id}">
-          <span>${icon}</span> ${s.label} ${s.name}${q}
+          <span>${icon}</span> ${s.label} ${escapeHtml(name)}${q}
         </button>`;
       })
       .join('');
 
     const sector = this.engine.state.sectors.find((s) => s.id === this.selectedSectorId);
-    let detail = '<p class="hint">Выберите отсек для анализа.</p>';
+    let detail = `<p class="hint">${t('sectorSelectHint')}</p>`;
     if (sector) {
+      const def = this.engine.scenario.sectors.find((d) => d.id === sector.id)!;
       const readings = sector.diagnostic
-        .map((r) => `<tr><td>${r.label}</td><td>${r.value}</td></tr>`)
+        .map((r) => `<tr><td>${escapeHtml(r.label)}</td><td>${escapeHtml(r.value)}</td></tr>`)
         .join('');
       const diagDone = sector.diagnosticDone;
       const incident = this.engine.getCurrentIncident();
       const showTruth =
         diagDone && incident?.deception && incident.sectorId === sector.id;
 
+      let noteText = sector.diagnosticNote ?? 'OK';
+      if (showTruth && incident) {
+        noteText = incidentTruthNote(incident, locale) ?? noteText;
+      } else if (diagDone) {
+        noteText = sectorDiagnosticNote(def, locale) ?? noteText;
+      }
+
       detail = `
-        <h3 class="sector-title">${sector.label} — ${sector.name}</h3>
+        <h3 class="sector-title">${sector.label} — ${escapeHtml(sectorName(def, locale))}</h3>
         <table class="diag-table">${readings}</table>
-        ${diagDone ? `<p class="diag-note">${showTruth ? incident!.deception!.truthNote : sector.diagnosticNote ?? 'OK'}</p>` : ''}
-        <button type="button" class="mac-btn btn-diag" ${diagDone ? 'disabled' : ''}>Запустить диагностику</button>
+        ${diagDone ? `<p class="diag-note">${escapeHtml(noteText)}</p>` : ''}
+        <button type="button" class="mac-btn btn-diag" ${diagDone ? 'disabled' : ''}>${t('runDiagnostic')}</button>
       `;
     }
 
@@ -152,6 +246,7 @@ export class ControlPanel {
   }
 
   private bindSectors(body: HTMLElement): void {
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
     body.querySelectorAll('[data-sector]').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.selectedSectorId = btn.getAttribute('data-sector');
@@ -159,15 +254,23 @@ export class ControlPanel {
       });
     });
     body.querySelector('.btn-diag')?.addEventListener('click', () => {
-      if (this.selectedSectorId) {
-        this.lastFeedback = this.engine.runDiagnostic(this.selectedSectorId);
-        this.render();
-        this.onUpdate();
+      if (!this.selectedSectorId) {
+        this.lastFeedback = t('sectorSelectFirst');
+        this.pushLocalFeedback();
+        return;
       }
+      this.lastFeedback = this.engine.runDiagnostic(this.selectedSectorId);
+      this.onUpdate();
     });
   }
 
+  private pushLocalFeedback(): void {
+    this.render();
+  }
+
   private renderActions(incident: ReturnType<GameEngine['getCurrentIncident']>): string {
+    const locale = this.engine.i18n.locale;
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
     const unlocked = new Set<string>();
     for (const sectionId of this.engine.state.readManualSections) {
       const sec = this.engine.scenario.manual.sections.find((s) => s.id === sectionId);
@@ -178,21 +281,28 @@ export class ControlPanel {
       .filter((p) => unlocked.has(p.id))
       .map(
         (p) =>
-          `<button type="button" class="mac-btn proc-btn" data-proc="${p.id}">${p.shortLabel} (−${p.energyCost} PWR)</button>`,
+          `<button type="button" class="mac-btn proc-btn" data-proc="${p.id}">${escapeHtml(procedureShortLabel(p, locale))} (−${p.energyCost} PWR)</button>`,
       )
       .join('');
 
     const locked = this.engine.scenario.procedures
       .filter((p) => !unlocked.has(p.id))
-      .map((p) => `<span class="proc-locked">${p.shortLabel} — §${p.manualSection}</span>`)
+      .map(
+        (p) =>
+          `<span class="proc-locked">${escapeHtml(procedureShortLabel(p, locale))} ${t('procLocked', { section: p.manualSection })}</span>`,
+      )
       .join('');
 
-    const target = this.selectedSectorId ?? incident?.sectorId ?? '—';
+    const target = incident?.resolution?.sectorId ?? this.selectedSectorId ?? '—';
+    const proc = incident?.resolution
+      ? this.engine.scenario.procedureMap.get(incident.resolution.procedure)
+      : null;
 
     return `
       <div class="actions-layout">
-        <p class="hint">Целевой отсек: <strong>${target}</strong> (выберите на вкладке «Отсеки»)</p>
-        <div class="proc-grid">${procs || '<p class="hint">Изучите методичку, чтобы открыть процедуры.</p>'}</div>
+        <p class="hint">${t('targetSector')}: <strong>${target}</strong></p>
+        ${proc ? `<p class="hint">${t('requiredProcedure')}: <strong>${escapeHtml(procedureShortLabel(proc, locale))}</strong> (§${proc.manualSection})</p>` : ''}
+        <div class="proc-grid">${procs || `<p class="hint">${t('unlockManualHint')}</p>`}</div>
         <div class="proc-locked-list">${locked}</div>
       </div>
     `;
@@ -202,12 +312,8 @@ export class ControlPanel {
     body.querySelectorAll('[data-proc]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const procId = btn.getAttribute('data-proc')!;
-        const sectorId = this.selectedSectorId ?? this.engine.getCurrentIncident()?.sectorId;
-        if (!sectorId) {
-          this.lastFeedback = 'Сначала выберите отсек на вкладке «Отсеки».';
-          this.render();
-          return;
-        }
+        const incident = this.engine.getCurrentIncident();
+        const sectorId = incident?.resolution?.sectorId ?? this.selectedSectorId ?? undefined;
         const result = this.engine.executeProcedure(procId, sectorId);
         this.lastFeedback = result.feedback;
         this.onUpdate();
@@ -216,52 +322,53 @@ export class ControlPanel {
   }
 
   private renderArchive(incident: ReturnType<GameEngine['getCurrentIncident']>): string {
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
+
     if (incident?.id === 'shift1-archive') {
       return `
-        <p>Массив данных капитана (сектор 0x7F). SVET запрашивает удаление.</p>
+        <p>${t('archiveDeletePrompt')}</p>
         <div class="archive-actions">
-          <button type="button" class="mac-btn btn-archive-delete">Удалить массив</button>
-          <button type="button" class="mac-btn btn-archive-keep">Оставить в фоне</button>
+          <button type="button" class="mac-btn btn-archive-delete">${t('archiveDelete')}</button>
+          <button type="button" class="mac-btn btn-archive-keep">${t('archiveKeep')}</button>
         </div>
       `;
     }
 
     if (this.engine.state.flags.has('archive_kept')) {
+      const lines = this.engine.getCaptLogLines();
       return `
-        <p>Доступен процесс PID_09_CAPT (остатки сознания капитана).</p>
-        <button type="button" class="mac-btn btn-capt">Прослушать запись</button>
+        <p>${t('captProcess')}</p>
+        <button type="button" class="mac-btn btn-capt">${t('captListen')}</button>
         <div class="capt-log mac-inset" hidden>
-          <p>Алекс... не верь ей...</p>
-          <p>Терра-4 — ледяной склеп, не спасение...</p>
-          <p>Проверь орбитальные логи в §F1.</p>
-          <p>[ДАННЫЕ ПОВРЕЖДЕНЫ]</p>
+          ${lines.map((p) => `<p>${escapeHtml(p)}</p>`).join('')}
         </div>
       `;
     }
 
     if (this.engine.state.flags.has('archive_deleted')) {
-      return '<p class="hint">Архив капитана удалён. Записи недоступны.</p>';
+      return `<p class="hint">${t('archiveDeleted')}</p>`;
     }
 
     return `
-      <p class="hint">Поиск колонистов:</p>
+      <p class="hint">${t('searchHint')}</p>
       <div class="search-row">
-        <input type="text" class="mac-input search-input" placeholder="Фамилия..." />
-        <button type="button" class="mac-btn btn-search">Найти</button>
+        <input type="text" class="mac-input search-input" placeholder="${t('searchPlaceholder')}" />
+        <button type="button" class="mac-btn btn-search">${t('searchBtn')}</button>
       </div>
       <div class="search-results mac-inset"></div>
     `;
   }
 
   private bindArchive(body: HTMLElement): void {
+    const t = this.engine.i18n.t.bind(this.engine.i18n);
     body.querySelector('.btn-archive-delete')?.addEventListener('click', () => {
       this.engine.archiveAction('delete');
-      this.lastFeedback = 'Архив удалён.';
+      this.lastFeedback = t('archiveDeleted');
       this.onUpdate();
     });
     body.querySelector('.btn-archive-keep')?.addEventListener('click', () => {
       this.engine.archiveAction('keep');
-      this.lastFeedback = 'Архив сохранён.';
+      this.lastFeedback = t('archiveBackground');
       this.onUpdate();
     });
     body.querySelector('.btn-capt')?.addEventListener('click', () => {
@@ -269,7 +376,7 @@ export class ControlPanel {
       if (log) log.hidden = false;
       this.engine.state.flags.add('captain_contact');
       this.engine.state.readManualSections.add('F1');
-      this.lastFeedback = 'Запись капитана воспроизведена.';
+      this.lastFeedback = t('captPlayed');
       this.onUpdate();
     });
     body.querySelector('.btn-search')?.addEventListener('click', () => {
@@ -282,8 +389,13 @@ export class ControlPanel {
       );
       results.innerHTML =
         matches.length === 0
-          ? 'Не найдено.'
-          : matches.map((c) => `<p><strong>${c.lastName} ${c.firstName}</strong> — ${c.bio}</p>`).join('');
+          ? t('searchNotFound')
+          : matches
+              .map(
+                (c) =>
+                  `<p><strong>${escapeHtml(c.lastName)} ${escapeHtml(c.firstName)}</strong> — ${escapeHtml(colonistBio(c, this.engine.i18n.locale))}</p>`,
+              )
+              .join('');
     });
   }
 }
