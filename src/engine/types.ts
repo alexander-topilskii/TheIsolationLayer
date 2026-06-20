@@ -144,6 +144,31 @@ export interface InitialState {
   gameTime: string;
 }
 
+export interface LocalizedLabel {
+  ru: string;
+  en: string;
+}
+
+export interface ShipMapRegion {
+  sectorId: string;
+  r: number;
+  c: number;
+  w: number;
+  h: number;
+}
+
+export interface ShipMapDeck {
+  id: string;
+  label: LocalizedLabel;
+  lines: string[];
+  regions: ShipMapRegion[];
+}
+
+export interface ShipMapModule {
+  version: number;
+  decks: ShipMapDeck[];
+}
+
 export interface ScenarioIndex {
   id: string;
   title: string;
@@ -156,6 +181,7 @@ export interface ScenarioIndex {
     procedures: string;
     colonists: string;
     sectors: string;
+    shipMap?: string;
   };
   startIncident: string;
   endings: Ending[];
@@ -170,6 +196,7 @@ export interface LoadedScenario {
   procedureMap: Map<string, Procedure>;
   colonists: ColonistRecord[];
   sectors: SectorDefinition[];
+  shipMap: ShipMapModule | null;
 }
 
 export interface FeedMessage {

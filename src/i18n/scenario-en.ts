@@ -143,7 +143,7 @@ export const scenarioEn = {
       pages: [
         'Sector A: hydroponics and water treatment.',
         'Filter clog: pressure ↑, yield ↓.',
-        '1. Open Sectors tab, select A-2.',
+        '1. Open Ship tab, select A-2.',
         '2. Run diagnostic — check FILTER_STATUS.',
         '3. Actions tab → Flush filters.',
       ],

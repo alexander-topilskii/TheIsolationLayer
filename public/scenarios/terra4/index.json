@@ -15,7 +15,8 @@
     "manual": "./manual.json",
     "procedures": "./procedures.json",
     "colonists": "./colonists.json",
-    "sectors": "./sectors.json"
+    "sectors": "./sectors.json",
+    "shipMap": "./ship-map.json"
   },
   "startIncident": "shift1-start",
   "endings": [

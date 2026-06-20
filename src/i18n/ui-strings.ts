@@ -7,7 +7,7 @@ const ru: StringTable = {
   shift: 'Смена',
   feedTitle: 'Системные сообщения',
   tabManual: 'Методичка',
-  tabSectors: 'Отсеки',
+  tabShip: 'Корабль',
   tabActions: 'Действия',
   tabArchive: 'Архив',
   btnAck: 'Подтвердить',
@@ -72,7 +72,7 @@ const ru: StringTable = {
     'Процедура «{label}» не изучена. Откройте §{section} в методичке.',
   errManualRequired: 'Сначала изучите §{section} в методичке.',
   errDiagnosticRequired:
-    'Сначала выполните диагностику отсека {sector} (вкладка «Отсеки»).',
+    'Сначала выполните диагностику отсека {sector} (вкладка «Корабль»).',
   errWrongSector: 'Процедура относится к отсеку {target}, а не {applied}.',
   errWrongProcedure:
     'Процедура «{label}» не подходит для текущего инцидента. См. методичку §{section}.',
@@ -87,7 +87,7 @@ const en: StringTable = {
   shift: 'Shift',
   feedTitle: 'System messages',
   tabManual: 'Manual',
-  tabSectors: 'Sectors',
+  tabShip: 'Ship',
   tabActions: 'Actions',
   tabArchive: 'Archive',
   btnAck: 'Acknowledge',
@@ -152,7 +152,7 @@ const en: StringTable = {
     'Procedure "{label}" not studied. Open §{section} in the manual.',
   errManualRequired: 'Study §{section} in the manual first.',
   errDiagnosticRequired:
-    'Run diagnostic on sector {sector} first (Sectors tab).',
+    'Run diagnostic on sector {sector} first (Ship tab).',
   errWrongSector: 'Procedure applies to sector {target}, not {applied}.',
   errWrongProcedure:
     'Procedure "{label}" does not match this incident. See manual §{section}.',

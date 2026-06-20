@@ -5,7 +5,7 @@ export type UiKey =
   | 'shift'
   | 'feedTitle'
   | 'tabManual'
-  | 'tabSectors'
+  | 'tabShip'
   | 'tabActions'
   | 'tabArchive'
   | 'btnAck'

@@ -9,7 +9,9 @@ import {
   sectorName,
 } from '../i18n/scenario-en.ts';
 
-export type ControlTab = 'manual' | 'sectors' | 'actions' | 'archive';
+import { ShipMapView } from './ShipMapView.ts';
+
+export type ControlTab = 'manual' | 'ship' | 'actions' | 'archive';
 
 export interface ControlUiState {
   activeTab: ControlTab;
@@ -48,7 +50,8 @@ export class ControlPanel {
   }
 
   applyUiState(state: ControlUiState): void {
-    this.activeTab = state.activeTab;
+    const tab = state.activeTab as string;
+    this.activeTab = tab === 'sectors' ? 'ship' : (state.activeTab as ControlTab);
     this.selectedSectorId = state.selectedSectorId;
     this.selectedManualId = state.selectedManualId;
     this.lastFeedback = this.statusHint(this.engine.getCurrentIncident());
@@ -68,7 +71,7 @@ export class ControlPanel {
     const t = this.engine.i18n.t.bind(this.engine.i18n);
     const labels: Record<ControlTab, string> = {
       manual: t('tabManual'),
-      sectors: t('tabSectors'),
+      ship: t('tabShip'),
       actions: t('tabActions'),
       archive: t('tabArchive'),
     };
@@ -96,9 +99,9 @@ export class ControlPanel {
         body.innerHTML = this.renderManual();
         this.bindManual(body);
         break;
-      case 'sectors':
-        body.innerHTML = this.renderSectors();
-        this.bindSectors(body);
+      case 'ship':
+        body.innerHTML = this.renderShip();
+        this.bindShip(body);
         break;
       case 'actions':
         body.innerHTML = this.renderActions(incident);
@@ -197,7 +200,7 @@ export class ControlPanel {
     });
   }
 
-  private renderSectors(): string {
+  private renderShip(): string {
     const locale = this.engine.i18n.locale;
     const t = this.engine.i18n.t.bind(this.engine.i18n);
     const qTag = t('quarantineTag');
@@ -242,17 +245,46 @@ export class ControlPanel {
       `;
     }
 
-    return `<div class="sectors-layout"><div class="sector-list">${list}</div><div class="sector-detail mac-inset">${detail}</div></div>`;
+    const shipMap = this.engine.scenario.shipMap;
+    const mapHtml = shipMap
+      ? ShipMapView.render(
+          shipMap,
+          this.engine.state.sectors,
+          this.selectedSectorId,
+          locale,
+        )
+      : '';
+
+    return `
+      <div class="ship-layout">
+        <div class="ship-upper sectors-layout">
+          <div class="sector-list">${list}</div>
+          <div class="sector-detail mac-inset">${detail}</div>
+        </div>
+        ${mapHtml}
+      </div>
+    `;
   }
 
-  private bindSectors(body: HTMLElement): void {
+  private bindShip(body: HTMLElement): void {
     const t = this.engine.i18n.t.bind(this.engine.i18n);
-    body.querySelectorAll('[data-sector]').forEach((btn) => {
+
+    const selectSector = (id: string | null) => {
+      if (!id) return;
+      this.selectedSectorId = id;
+      this.render();
+    };
+
+    body.querySelectorAll('.sector-row[data-sector]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.selectedSectorId = btn.getAttribute('data-sector');
-        this.render();
+        selectSector(btn.getAttribute('data-sector'));
       });
     });
+
+    ShipMapView.bind(body, (sectorId) => {
+      selectSector(sectorId);
+    });
+
     body.querySelector('.btn-diag')?.addEventListener('click', () => {
       if (!this.selectedSectorId) {
         this.lastFeedback = t('sectorSelectFirst');
